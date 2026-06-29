@@ -21,6 +21,8 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 |---|---|---|
 | In-browser invoice **text** parser view | `src/components/views/InvoiceOCRView.jsx` | Production (wired into app) |
 | Invoice field extractor (BG/EN, ДДС, ЕИК, BGN) | `src/lib/parsers/invoiceParser.js` | Production (wired + tested) |
+| Microinvest Delta Pro **TransferData XML** export | `src/lib/parsers/microinvestXmlExport.js` | Source-backed (provisional, tested) |
+| Delta Pro CSV reference/manual template | `src/lib/parsers/deltaProExport.js` | Reference/legacy template (not canonical) |
 | Supabase schema (`invoices`, `invoice_templates`) | `supabase-schema.sql` | Reference example |
 | Hermes OCR sub-agent definition | `hermes-ocr-agent.yaml` | Reference example |
 | Copilot ACP client for Hermes | `copilot-acp/hermes_copilot_acp.py` | Reference example |
@@ -36,12 +38,51 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 
 Open `/dashboard` → **Invoice Parser**. Upload text-readable invoices;
 fields are extracted client-side, validated (`subtotal + tax = total`),
-listed with a confidence score, and exportable to CSV. No data leaves the browser.
+listed with a confidence score, and exportable to CSV, a Delta Pro CSV
+reference template, or a Microinvest Delta Pro **TransferData XML** import file.
+No data leaves the browser.
 
-### Microinvest Delta Pro export
+### Microinvest Delta Pro XML / TransferData export
 
-The **Delta Pro** button exports invoices for Microinvest Delta Pro's *Импорт на
-документи*. This format is **based on best-effort research and regional BG
+The **Delta Pro XML** button is the source-backed path for Microinvest Delta
+Pro. It generates a `TransferData` import document — double-entry bookkeeping
+mode (`<Accountings>`) — modelled on the `FINTECT-PRO/MICROINVEST-OCR` pipeline
+(`pipeline/transform_ocr_to_delta.py`), which is the **stronger implementation
+reference** than a best-effort `;` CSV. Structure:
+
+```
+<TransferData xmlns="urn:Transfer">
+  <Accountings>
+    <Accounting Number="1" AccountingDate="21.06.2026" Term="…" VatTerm="1">
+      <Document DocumentType="1" Number="INV-7" Date="21.06.2026" />
+      <Company Name="Acme ЕООД" Bulstat="123456789" VatNumber="BG123456789" />
+      <AccountingDetails>
+        <AccountingDetail AccountNumber="602"   Debit="1000.00" Credit="0.00" />
+        <AccountingDetail AccountNumber="453/1" Debit="200.00"  Credit="0.00" />
+        <AccountingDetail AccountNumber="401"   Debit="0.00"    Credit="1200.00" />
+      </AccountingDetails>
+    </Accounting>
+  </Accountings>
+</TransferData>
+```
+
+Mappings (purchase default): Dr 602 net, Dr 453/1 VAT, Cr 401 gross. Sale: Dr
+411 gross, Cr 703 net, Cr 453/2 VAT. `DocumentType` 1 invoice / 2 debit note / 3
+credit note. `VatTerm` purchase 20% → 1, sale 20% → 7, exempt → 6, none → 0.
+Amounts use **dot decimals** (XML convention). When no line items exist, a
+single summary line is synthesised from totals and postings are balanced by
+construction. The exporter XML-escapes vendor/document data.
+
+> **Provisional, based on FINTECT-PRO/MICROINVEST-OCR TransferData profile.**
+> Not yet live-validated against a real Delta Pro import / golden file. Confirm
+> account numbers and posting rules with an accountant and the target Delta Pro
+> version before production use.
+
+### Delta Pro CSV (reference / legacy template)
+
+The **Delta Pro CSV (reference)** button keeps the earlier `;`-delimited export
+as a manual import template — it is **not** a vendor-verified canonical Delta Pro
+integration; prefer the XML TransferData path above. This format is **based on best-effort research and regional BG
 conventions, and should be confirmed against the target Delta Pro version /
 import template before production use.** It is a practical reference/default for
 manual import — not a vendor-verified canonical contract for all versions.
@@ -67,7 +108,7 @@ manual import — not a vendor-verified canonical contract for all versions.
 
 ## Telegram commands
 
-`/upload_invoice` · `/ocr_status` · `/invoices` · `/export_csv` · `/ocr_stats`
+`/upload_invoice` · `/ocr_status` · `/invoices` · `/export_csv` · `/export_deltapro_csv` · `/export_deltapro_xml` · `/ocr_stats`
 
 ## Reference
 

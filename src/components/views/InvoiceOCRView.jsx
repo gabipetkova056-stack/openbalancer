@@ -13,13 +13,15 @@ import { FileText, Upload, Download, Trash2, CheckCircle2, AlertTriangle } from 
 import useStore from '../../store/useStore.js';
 import { parseInvoiceText, isInvoiceText } from '../../lib/parsers/invoiceParser.js';
 import { toDeltaProCsv } from '../../lib/parsers/deltaProExport.js';
+import { toMicroinvestTransferXml } from '../../lib/parsers/microinvestXmlExport.js';
 
 const COMMANDS = [
   ['/upload_invoice', 'Качи фактура (PDF/снимка) за OCR обработка'],
   ['/ocr_status', 'Статус на последната OCR задача'],
   ['/invoices', 'Списък обработени фактури'],
   ['/export_csv', 'Експорт на фактури в CSV'],
-  ['/export_deltapro', 'Експорт за Microinvest Delta Pro'],
+  ['/export_deltapro_csv', 'Експорт Delta Pro CSV (reference/manual import)'],
+  ['/export_deltapro_xml', 'Експорт Microinvest TransferData XML'],
   ['/ocr_stats', 'Статистика: точност, обработени, грешки'],
 ];
 
@@ -83,12 +85,22 @@ export default function InvoiceOCRView() {
     URL.revokeObjectURL(url);
   }
 
-  function exportDeltaPro() {
+  function exportDeltaProCsv() {
     const txt = toDeltaProCsv(invoices);
     const url = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=windows-1251' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = 'invoices-deltapro.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportDeltaProXml() {
+    const xml = toMicroinvestTransferXml(invoices, { direction: 'purchase' });
+    const url = URL.createObjectURL(new Blob([xml], { type: 'application/xml' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices-deltapro.xml';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -109,7 +121,8 @@ export default function InvoiceOCRView() {
           {invoices.length > 0 && (
             <>
               <button className="btn btn-ghost btn-sm" onClick={exportCsv}><Download size={14} /> Export CSV</button>
-              <button className="btn btn-ghost btn-sm" onClick={exportDeltaPro}><Download size={14} /> Delta Pro</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportDeltaProCsv}><Download size={14} /> Delta Pro CSV (reference)</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportDeltaProXml}><Download size={14} /> Delta Pro XML</button>
               <button className="btn btn-ghost btn-sm" onClick={clearInvoices}><Trash2 size={14} /> Clear</button>
             </>
           )}
