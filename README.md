@@ -203,5 +203,3 @@ server {
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
-
-<!-- PR scope: invoice parser + Microinvest Delta Pro TransferData XML export -->
