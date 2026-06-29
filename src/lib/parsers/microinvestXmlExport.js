@@ -78,16 +78,24 @@ function xmlDate(iso) {
   return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
 }
 
-/** Build balanced double-entry detail rows for one invoice. */
-function buildDetails(rec, direction) {
-  const acc = ACCOUNTS[direction] || ACCOUNTS.purchase;
+/** Resolve net/vat/gross from possibly-partial totals, synthesizing missing parts. */
+function resolveTotals(rec) {
   const subtotal = Number(rec.subtotal);
   const tax = Number(rec.tax);
   const total = Number(rec.total);
-  // Synthesize totals when only a single value is present (summary line).
-  const net = Number.isFinite(subtotal) ? subtotal : Number.isFinite(total) && Number.isFinite(tax) ? total - tax : Number.isFinite(total) ? total : 0;
   const vat = Number.isFinite(tax) ? tax : 0;
+  let net;
+  if (Number.isFinite(subtotal)) net = subtotal;
+  else if (Number.isFinite(total)) net = total - vat;
+  else net = 0;
   const gross = Number.isFinite(total) ? total : net + vat;
+  return { net, vat, gross };
+}
+
+/** Build balanced double-entry detail rows for one invoice. */
+function buildDetails(rec, direction) {
+  const acc = ACCOUNTS[direction] || ACCOUNTS.purchase;
+  const { net, vat, gross } = resolveTotals(rec);
   const rows = [];
   if (direction === 'sale') {
     rows.push({ account: acc.partner, debit: gross, credit: 0 });
