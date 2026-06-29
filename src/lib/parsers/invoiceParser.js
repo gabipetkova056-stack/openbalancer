@@ -8,6 +8,7 @@
  * Produces an InvoiceRecord that mirrors the Supabase `invoices` schema, so the
  * same shape can later be written to the DB Agent or exported to CSV.
  */
+import { buildRegistryValidation } from './bgRegistryValidation.js';
 
 /** Generate a stable invoice id. */
 export function generateInvoiceId() {
@@ -161,4 +162,3 @@ export function parseInvoiceText(text, fileName = '') {
     createdAt: new Date().toISOString(),
   };
 }
-import { buildRegistryValidation } from './bgRegistryValidation.js';

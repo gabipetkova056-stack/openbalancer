@@ -33,6 +33,8 @@ const COMMANDS = [
   ['/ocr_stats', 'Статистика: точност, обработени, грешки'],
 ];
 
+const EXPORT_FORMATS = ['Microinvest XML', 'Plus Minus XML', 'Ajur CSV', 'CSV', 'JSON API'];
+
 const PRICING_PLANS = [
   { name: 'Starter', price: '29€ / месец', details: '200 фактури · CSV + JSON API' },
   { name: 'Pro', price: '79€ / месец', details: '1000 фактури · всички експорти · API · 5 потребители' },
@@ -42,6 +44,10 @@ const PRICING_PLANS = [
 function money(v, ccy) {
   if (v == null) return '—';
   return `${v.toFixed(2)} ${ccy || ''}`.trim();
+}
+
+function sanitizeBrand(value) {
+  return (value || 'partner').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
 }
 
 function toCsv(rows) {
@@ -142,7 +148,7 @@ export default function InvoiceOCRView() {
     const summary = [
       `Invoice batch: ${invoices.length}`,
       `Total: ${total} BGN`,
-      `Exports: Microinvest XML, Plus Minus XML, Ajur CSV, CSV, JSON API`,
+      `Exports: ${EXPORT_FORMATS.join(', ')}`,
       resellerMode ? `Partner mode: ${brandName.trim() || 'enabled'}` : 'Partner mode: off',
     ].join('\n');
     const text = encodeURIComponent(summary);
@@ -151,7 +157,7 @@ export default function InvoiceOCRView() {
 
   function fileName(base) {
     if (!resellerMode) return base;
-    const safeBrand = (brandName || 'partner').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+    const safeBrand = sanitizeBrand(brandName);
     return `${safeBrand || 'partner'}-${base}`;
   }
 

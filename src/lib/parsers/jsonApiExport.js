@@ -1,5 +1,6 @@
 export function toInvoiceApiPayload(invoices = [], options = {}) {
   const now = new Date().toISOString();
+  const version = now.slice(0, 7);
   const normalized = (invoices || []).map((rec) => ({
     id: rec.id,
     vendor: rec.vendor || '',
@@ -17,7 +18,7 @@ export function toInvoiceApiPayload(invoices = [], options = {}) {
   }));
 
   return {
-    version: '2026-06',
+    version,
     generatedAt: now,
     system: options.system || 'openbalancer',
     whiteLabel: {
