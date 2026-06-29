@@ -22,6 +22,9 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 | In-browser invoice **text** parser view | `src/components/views/InvoiceOCRView.jsx` | Production (wired into app) |
 | Invoice field extractor (BG/EN, ДДС, ЕИК, BGN) | `src/lib/parsers/invoiceParser.js` | Production (wired + tested) |
 | Microinvest Delta Pro **TransferData XML** export | `src/lib/parsers/microinvestXmlExport.js` | Source-backed (provisional, tested) |
+| Plus Minus XML export template | `src/lib/parsers/plusMinusXmlExport.js` | Production template |
+| Ajur CSV export template | `src/lib/parsers/ajurExport.js` | Production template |
+| JSON API payload export | `src/lib/parsers/jsonApiExport.js` | Production template |
 | Delta Pro CSV reference/manual template | `src/lib/parsers/deltaProExport.js` | Reference/legacy template (not canonical) |
 | Supabase schema (`invoices`, `invoice_templates`) | `supabase-schema.sql` | Reference example |
 | Hermes OCR sub-agent definition | `hermes-ocr-agent.yaml` | Reference example |
@@ -38,10 +41,29 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 ## Dashboard usage
 
 Open `/dashboard` → **Invoice Parser**. Upload `.txt`/`.json`/`.csv` invoices;
-fields are extracted client-side, validated (`subtotal + tax = total`),
-listed with a confidence score, and exportable to CSV, a Delta Pro CSV
-reference template, or a Microinvest Delta Pro **TransferData XML** import file.
-No data leaves the browser.
+fields are extracted client-side, validated (`subtotal + tax = total` + local
+EIK/VAT checks with VIES eligibility flag), listed with a confidence score, and
+exportable to:
+
+- Microinvest TransferData XML
+- Plus Minus XML
+- Ajur CSV
+- Universal CSV
+- JSON API payload
+
+Direct push helpers are included for Email and Telegram summary handoff.
+No data leaves the browser unless you use those external links.
+
+## Pricing (Bulgaria 2026)
+
+- **Starter**: 29 EUR / month — up to 200 invoices, CSV + JSON API
+- **Pro**: 79 EUR / month — up to 1000 invoices, all exports, API, 5 users
+- **Enterprise**: 299 EUR / month — unlimited, white-label, team workspace
+
+## Integrations / partners
+
+- Zapier + Make webhook-oriented integration surface (`/api/invoices/*`)
+- Reseller/partner mode in UI (white-label branding in export payloads/files)
 
 ### Microinvest Delta Pro XML / TransferData export
 

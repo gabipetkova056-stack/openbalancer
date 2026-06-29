@@ -8,6 +8,7 @@
  * Produces an InvoiceRecord that mirrors the Supabase `invoices` schema, so the
  * same shape can later be written to the DB Agent or exported to CSV.
  */
+import { buildRegistryValidation } from './bgRegistryValidation.js';
 
 /** Generate a stable invoice id. */
 export function generateInvoiceId() {
@@ -123,6 +124,8 @@ export function parseInvoiceText(text, fileName = '') {
   ]));
 
   const eik = firstMatch(t, [/(?:еик|булстат|bulstat|eik)[:\s]*([0-9]{9,13})/i]);
+  const vatNumber = firstMatch(t, [/(?:vat\s*(?:no|number)?|идентификационен\s*номер\s*по\s*ддс)[:\s]*([A-Z]{0,2}\s*[0-9]{9,10})/i]);
+  const registryValidation = buildRegistryValidation({ eik, vatNumber });
 
   const currency = /\bbgn|лв\.?\b/i.test(t) ? 'BGN' : /\beur|€/i.test(t) ? 'EUR' : /\busd|\$/i.test(t) ? 'USD' : 'BGN';
 
@@ -145,6 +148,8 @@ export function parseInvoiceText(text, fileName = '') {
     invoiceDate,
     dueDate,
     eik,
+    vatNumber: registryValidation.vatNumber,
+    registryValidation,
     subtotal,
     tax,
     taxRate,

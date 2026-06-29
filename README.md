@@ -1,6 +1,6 @@
-# OpenBalancer — AI Prompt Load Balancer
+# OpenBalancer — Universal Invoice Automation Platform
 
-> **Multi-LLM Orchestration** — Intelligent prompt routing across Claude, GPT-4o, Gemini, and local models with automated fallback, cost optimization, and full audit logging.
+> **Invoice Automation** — Parse invoice text exports and deliver accounting-ready exports for Microinvest, Plus Minus, Ajur, CSV, and JSON API, with partner-friendly integrations.
 
 Part of the **Wallestars Ecosystem** — built on n8n + Supabase + iOS Shortcuts.
 
@@ -8,14 +8,12 @@ Part of the **Wallestars Ecosystem** — built on n8n + Supabase + iOS Shortcuts
 
 ## Features
 
-- **6 routing strategies** — cost-optimized, lowest-latency, round-robin, quality-first, weighted, failover
-- **4+ LLM providers** — Claude Sonnet/Opus, GPT-4o/mini, Gemini 2.5 Pro, Ollama (local)
-- **Auto-fallback** — cascades through providers on error/rate-limit in &lt;100ms
-- **Budget guard** — Supabase tracks daily spend; auto-downgrades to local when limit hit
-- **Task classification** — routes code prompts to Deepseek-Coder, reasoning to Claude Opus, etc.
-- **Dark/light mode** — respects `prefers-color-scheme`, toggleable, persisted via `localStorage`
-- **Accessible** — skip link, ARIA labels, keyboard navigation, focus-visible styles, WCAG AA contrast
-- **Responsive** — mobile-first, works from 375px (iPhone SE) to ultrawide
+- **Universal export matrix** — Microinvest TransferData XML, Plus Minus XML, Ajur CSV, universal CSV, JSON API
+- **In-browser invoice parser** — extracts vendor, invoice number/date, ДДС/VAT, EIK/BULSTAT, totals
+- **Registry-focused validation** — local EIK/VAT checksum validation + VIES eligibility marker
+- **Automation integrations** — Zapier/Make webhook-oriented integration model + Email/Telegram push helpers
+- **Partner-ready** — reseller/white-label mode with branded exports
+- **Pricing tiers in UI** — Starter / Pro / Enterprise positioning aligned to BG market
 
 ## Architecture
 
