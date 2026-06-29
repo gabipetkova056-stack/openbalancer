@@ -29,14 +29,15 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 | n8n pipeline template | `n8n-invoice-pipeline.json` | Reference example |
 
 > **Note:** The dashboard view performs **text-based parsing**, not scanned-image
-> OCR. It reads file text in-browser (`.txt`/`.json`/`.csv` and text-readable
-> PDFs); scanned/image invoices need the n8n + OpenAI Vision path. The Supabase
+> OCR. It reads UTF-8 text in-browser (`.txt`/`.json`/`.csv`); binary PDFs and
+> scanned/image invoices need the n8n + OpenAI Vision path (`file.text()` cannot
+> extract page text from a PDF). The Supabase
 > schema, Hermes YAML, ACP client, and n8n JSON are **reference examples** for the
 > server side — they are not exercised by the dashboard build.
 
 ## Dashboard usage
 
-Open `/dashboard` → **Invoice Parser**. Upload text-readable invoices;
+Open `/dashboard` → **Invoice Parser**. Upload `.txt`/`.json`/`.csv` invoices;
 fields are extracted client-side, validated (`subtotal + tax = total`),
 listed with a confidence score, and exportable to CSV, a Delta Pro CSV
 reference template, or a Microinvest Delta Pro **TransferData XML** import file.
@@ -71,7 +72,8 @@ Mappings (purchase default): Dr 602 net, Dr 453/1 VAT, Cr 401 gross. Sale: Dr
 credit note. `VatTerm` purchase 20% → 1, sale 20% → 7, exempt → 6, none → 0.
 Amounts use **dot decimals** (XML convention). When no line items exist, a
 single summary line is synthesised from totals and postings are balanced by
-construction. The exporter XML-escapes vendor/document data.
+construction. The exporter XML-escapes vendor/document data. A **Покупка/Продажба**
+selector by the button switches postings/VatTerm between purchase and sale.
 
 > **Provisional, based on FINTECT-PRO/MICROINVEST-OCR TransferData profile.**
 > Not yet live-validated against a real Delta Pro import / golden file. Confirm

@@ -42,6 +42,7 @@ export default function InvoiceOCRView() {
   const { invoices, addInvoices, removeInvoice, clearInvoices, addToast, addError } = useStore();
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
+  const [direction, setDirection] = useState('purchase');
 
   const stats = useMemo(() => {
     const n = invoices.length;
@@ -57,6 +58,8 @@ export default function InvoiceOCRView() {
     try {
       for (const file of files) {
         const text = await file.text();
+        // file.text() reads UTF-8 only; .txt/.json/.csv work, real PDFs do not
+        // (you'd get PDF object source, not page text). isInvoiceText filters those.
         if (!isInvoiceText(text)) {
           addToast(`${file.name}: не изглежда като фактура`, 'error');
           continue;
@@ -96,7 +99,7 @@ export default function InvoiceOCRView() {
   }
 
   function exportDeltaProXml() {
-    const xml = toMicroinvestTransferXml(invoices, { direction: 'purchase' });
+    const xml = toMicroinvestTransferXml(invoices, { direction });
     const url = URL.createObjectURL(new Blob([xml], { type: 'application/xml' }));
     const a = document.createElement('a');
     a.href = url;
@@ -111,7 +114,7 @@ export default function InvoiceOCRView() {
         <div>
           <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)' }}>Invoice Parser</h2>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-            invoice2data-style text extraction, in-browser. Works on text-readable files (exported/text PDFs, .txt, .json, .csv) — not scanned images. Tuned for BG фактури (ДДС, ЕИК/БУЛСТАТ, BGN).
+            invoice2data-style text extraction, in-browser. Works on text files (.txt, .json, .csv) — scanned images and binary PDFs need the n8n + OpenAI Vision path. Tuned for BG фактури (ДДС, ЕИК/БУЛСТАТ, BGN).
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
@@ -122,12 +125,16 @@ export default function InvoiceOCRView() {
             <>
               <button className="btn btn-ghost btn-sm" onClick={exportCsv}><Download size={14} /> Export CSV</button>
               <button className="btn btn-ghost btn-sm" onClick={exportDeltaProCsv}><Download size={14} /> Delta Pro CSV (reference)</button>
+              <select className="btn btn-ghost btn-sm" value={direction} onChange={(e) => setDirection(e.target.value)} aria-label="XML posting direction" title="Posting direction for Delta Pro XML">
+                <option value="purchase">Покупка</option>
+                <option value="sale">Продажба</option>
+              </select>
               <button className="btn btn-ghost btn-sm" onClick={exportDeltaProXml}><Download size={14} /> Delta Pro XML</button>
               <button className="btn btn-ghost btn-sm" onClick={clearInvoices}><Trash2 size={14} /> Clear</button>
             </>
           )}
         </div>
-        <input ref={fileRef} type="file" accept=".pdf,.txt,.json,.csv" multiple hidden
+        <input ref={fileRef} type="file" accept=".txt,.json,.csv" multiple hidden
           onChange={(e) => { handleFiles([...e.target.files]); e.target.value = ''; }} />
       </div>
 

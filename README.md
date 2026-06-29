@@ -32,7 +32,8 @@ REST API         Cost Tracker                 Ollama (local)
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v18 or later (no npm packages required)
+- [Node.js](https://nodejs.org/) v22 or later
+- npm dependencies installed with `npm install` or `npm ci`
 
 ### Run locally
 
