@@ -14,7 +14,13 @@ export function generateInvoiceId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return 'inv-' + crypto.randomUUID();
   }
-  return 'inv-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const arr = new Uint8Array(16);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(arr);
+  } else {
+    for (let i = 0; i < arr.length; i++) arr[i] = (Date.now() + i) % 256;
+  }
+  return 'inv-' + Array.from(arr).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
 }
 
 /** Heuristic: does this text look like an invoice? */
