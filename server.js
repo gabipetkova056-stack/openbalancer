@@ -134,15 +134,6 @@ async function fetchN8N(pathname, searchParams) {
       if (searchParams[key] !== undefined && searchParams[key] !== null) {
         url.searchParams.set(key, searchParams[key]);
       }
-
-      function buildInvoiceWebhookUrl(webhookPath) {
-        if (N8N_INVOICE_WEBHOOK_URL) return N8N_INVOICE_WEBHOOK_URL;
-        if (!N8N_BASE_URL) return null;
-        const base = trimSlash(N8N_BASE_URL);
-        const pathValue = String(webhookPath || '/webhook/invoice-processing');
-        const fixedPath = pathValue.startsWith('/') ? pathValue : '/' + pathValue;
-        return base + fixedPath;
-      }
     });
   }
 
@@ -152,6 +143,15 @@ async function fetchN8N(pathname, searchParams) {
       'API-KEY': N8N_API_KEY,
     },
   });
+}
+
+function buildInvoiceWebhookUrl(webhookPath) {
+  if (N8N_INVOICE_WEBHOOK_URL) return N8N_INVOICE_WEBHOOK_URL;
+  if (!N8N_BASE_URL) return null;
+  const base = trimSlash(N8N_BASE_URL);
+  const pathValue = String(webhookPath || '/webhook/invoice-processing');
+  const fixedPath = pathValue.startsWith('/') ? pathValue : '/' + pathValue;
+  return base + fixedPath;
 }
 
 function getExecutionStatus(execution) {

@@ -5,17 +5,6 @@
  * semicolon delimiter, dd.MM.yyyy dates, comma decimals, UTF-8 text.
  */
 
-const AJUR_COLUMNS = [
-  'number',
-  'date',
-  'vendor',
-  'eik',
-  'taxBase',
-  'vat',
-  'total',
-  'currency',
-];
-
 function ajurText(v) {
   return String(v ?? '').replace(/[;\r\n]+/g, ' ').trim();
 }
@@ -54,5 +43,3 @@ export function toAjurCsv(rows) {
   ));
   return [header, ...lines].join('\r\n');
 }
-
-export { AJUR_COLUMNS };
