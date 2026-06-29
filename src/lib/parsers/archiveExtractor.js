@@ -98,8 +98,19 @@ export function extractTar(buffer) {
 }
 
 /**
+ * Decompress a gzip-compressed ArrayBuffer using the browser's DecompressionStream API.
+ * @param {ArrayBuffer} buffer
+ * @returns {Promise<ArrayBuffer>}
+ */
+async function decompressGzip(buffer) {
+  const ds = new DecompressionStream('gzip');
+  const stream = new Blob([buffer]).stream().pipeThrough(ds);
+  return new Response(stream).arrayBuffer();
+}
+
+/**
  * Route a file by extension and extract its contents.
- * For .zip → JSZip; for .tar / .tar.gz (raw) → manual parser; otherwise return single file.
+ * For .zip → JSZip; for .tar → manual parser; for .tar.gz / .tgz → gzip decompression then manual parser; otherwise return single file.
  *
  * @param {File} file   Browser File object
  * @returns {Promise<Array<{name: string, content: string, ext: string, size: number}>>}
@@ -112,10 +123,15 @@ export async function extractFile(file) {
     return extractZip(buf, file.name);
   }
 
-  if (name.endsWith('.tar') || name.endsWith('.tar.gz') || name.endsWith('.tgz')) {
+  if (name.endsWith('.tar')) {
     const buf = await file.arrayBuffer();
-    // For .tar.gz we'd need a decompressor — fall back to treating as tar
     return extractTar(buf);
+  }
+
+  if (name.endsWith('.tar.gz') || name.endsWith('.tgz')) {
+    const buf = await file.arrayBuffer();
+    const decompressed = await decompressGzip(buf);
+    return extractTar(decompressed);
   }
 
   // Single text file

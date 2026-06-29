@@ -4,7 +4,7 @@
  * Accepts .zip, .tar, .json, .md, .txt, .csv files.
  */
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, FileJson, FileText, Archive, Loader } from 'lucide-react';
+import { Upload, FileJson, FileText, Archive } from 'lucide-react';
 import { extractFile } from '../../lib/parsers/archiveExtractor.js';
 import { routeFiles } from '../../lib/parsers/ingestionRouter.js';
 import useStore from '../../store/useStore.js';

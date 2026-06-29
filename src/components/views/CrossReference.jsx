@@ -10,8 +10,6 @@ function detectConflicts(docs) {
   const taskMap = {}; // key: normalized task text  →  [{docTitle, status}]
 
   for (const doc of docs) {
-    const src = (doc.rawSource || '').toLowerCase();
-
     // Match markdown checklist items: "- [x] task" or "- [ ] task"
     const lines = (doc.rawSource || '').split('\n');
     for (const line of lines) {

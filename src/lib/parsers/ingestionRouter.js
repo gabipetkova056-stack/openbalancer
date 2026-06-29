@@ -26,8 +26,8 @@ function tryParseJSON(text) {
 function maskSecrets(text) {
   return text
     // Generic API keys (32+ hex/alphanum chars after key-like prefix)
-    .replace(/(api[_-]?key|secret|token|password|passwd|bearer|access[_-]?key)["\s:=]+(['"]?)([A-Za-z0-9_\-./+]{20,})(\2)/gi,
-      (_, prefix, q, val, q2) => `${prefix}${q}***REDACTED(${val.length}chars)***${q2}`)
+    .replace(/(api[_-]?key|secret|token|password|passwd|bearer|access[_-]?key)(["'\s:=]+)(['"]?)([A-Za-z0-9_\-./+]{20,})(\3)/gi,
+      (_, prefix, sep, q, val, q2) => `${prefix}${sep}${q}***REDACTED(${val.length}chars)***${q2}`)
     // sk- style OpenAI keys
     .replace(/\bsk-[A-Za-z0-9]{20,}/g, 'sk-***REDACTED***')
     // Claude API keys

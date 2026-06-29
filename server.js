@@ -67,7 +67,7 @@ const server = http.createServer(function (req, res) {
 
     if (ext) {
       // Static asset request (JS, CSS, etc.) — serve from dist/
-      var assetFile = path.join(DIST, subPath);
+      var assetFile = path.join(DIST, subPath.replace(/^\/+/, ''));
       serveFile(assetFile, res);
     } else {
       // HTML/SPA fallback — serve dist/dashboard.html

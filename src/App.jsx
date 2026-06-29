@@ -28,8 +28,8 @@ export default function App() {
 
   const ActiveView = VIEWS[activeView] || HomeView;
 
-  function handleError(err, info) {
-    addError({ message: err.message, context: 'render', stack: err.stack, timestamp: new Date().toISOString() }, 'render');
+  function handleError(message, componentStack) {
+    addError({ message, context: 'render', stack: componentStack, timestamp: new Date().toISOString() }, 'render');
   }
 
   return (

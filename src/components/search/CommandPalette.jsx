@@ -48,7 +48,7 @@ export default function CommandPalette() {
       }
       if (!cmdOpen) return;
       if (e.key === 'Escape') closeCmd();
-      if (e.key === 'ArrowDown') setSelected((s) => Math.min(s + 1, results.length - 1));
+      if (e.key === 'ArrowDown') setSelected((s) => results.length === 0 ? s : Math.min(s + 1, results.length - 1));
       if (e.key === 'ArrowUp')   setSelected((s) => Math.max(s - 1, 0));
       if (e.key === 'Enter' && results[selected]) selectResult(results[selected]);
     }
