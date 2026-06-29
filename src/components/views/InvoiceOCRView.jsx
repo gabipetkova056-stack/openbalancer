@@ -1,10 +1,12 @@
 /**
- * InvoiceOCRView.jsx — in-browser Invoice OCR dashboard.
+ * InvoiceOCRView.jsx — in-browser invoice text-parsing dashboard.
  *
- * The OCR Agent leg of the Hermes orchestration: upload invoice text/PDF-text
- * exports, extract structured fields with invoiceParser, validate, and export
- * to CSV. 100% client-side — no data leaves the browser. The Telegram command
- * surface and Supabase schema are documented in docs/invoice-ocr/.
+ * The OCR Agent leg of the Hermes orchestration: upload text-readable invoices
+ * (exported/text PDFs, .txt, .json, .csv), extract structured fields with
+ * invoiceParser, validate, and export to CSV. This is text parsing, not
+ * scanned-image OCR — image invoices go through the n8n + OpenAI Vision path.
+ * 100% client-side — no data leaves the browser. The Telegram command surface
+ * and Supabase schema are reference examples in docs/invoice-ocr/.
  */
 import React, { useMemo, useRef, useState } from 'react';
 import { FileText, Upload, Download, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
@@ -83,9 +85,9 @@ export default function InvoiceOCRView() {
     <div className="view-content">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
         <div>
-          <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)' }}>Invoice OCR</h2>
+          <h2 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)' }}>Invoice Parser</h2>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
-            invoice2data-style extraction, in-browser. Tuned for BG фактури (ДДС, ЕИК/БУЛСТАТ, BGN).
+            invoice2data-style text extraction, in-browser. Works on text-readable files (exported/text PDFs, .txt, .json, .csv) — not scanned images. Tuned for BG фактури (ДДС, ЕИК/БУЛСТАТ, BGN).
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>

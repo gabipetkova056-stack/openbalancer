@@ -17,19 +17,25 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 
 ## What ships in this repo
 
-| Piece | Location |
-|---|---|
-| In-browser Invoice OCR view | `src/components/views/InvoiceOCRView.jsx` |
-| Invoice field extractor (BG/EN, ДДС, ЕИК, BGN) | `src/lib/parsers/invoiceParser.js` |
-| Supabase schema (`invoices`, `invoice_templates`) | `supabase-schema.sql` |
-| Hermes OCR sub-agent definition | `hermes-ocr-agent.yaml` |
-| Copilot ACP client for Hermes | `copilot-acp/hermes_copilot_acp.py` |
-| n8n pipeline template | `n8n-invoice-pipeline.json` |
+| Piece | Location | Status |
+|---|---|---|
+| In-browser invoice **text** parser view | `src/components/views/InvoiceOCRView.jsx` | Production (wired into app) |
+| Invoice field extractor (BG/EN, ДДС, ЕИК, BGN) | `src/lib/parsers/invoiceParser.js` | Production (wired + tested) |
+| Supabase schema (`invoices`, `invoice_templates`) | `supabase-schema.sql` | Reference example |
+| Hermes OCR sub-agent definition | `hermes-ocr-agent.yaml` | Reference example |
+| Copilot ACP client for Hermes | `copilot-acp/hermes_copilot_acp.py` | Reference example |
+| n8n pipeline template | `n8n-invoice-pipeline.json` | Reference example |
+
+> **Note:** The dashboard view performs **text-based parsing**, not scanned-image
+> OCR. It reads file text in-browser (`.txt`/`.json`/`.csv` and text-readable
+> PDFs); scanned/image invoices need the n8n + OpenAI Vision path. The Supabase
+> schema, Hermes YAML, ACP client, and n8n JSON are **reference examples** for the
+> server side — they are not exercised by the dashboard build.
 
 ## Dashboard usage
 
-Open `/dashboard` → **Invoice OCR**. Upload `.pdf`/`.txt`/`.json`/`.csv`
-invoices; fields are extracted client-side, validated (`subtotal + tax = total`),
+Open `/dashboard` → **Invoice Parser**. Upload text-readable invoices;
+fields are extracted client-side, validated (`subtotal + tax = total`),
 listed with a confidence score, and exportable to CSV. No data leaves the browser.
 
 ## Copilot ACP
