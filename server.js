@@ -11,6 +11,7 @@ const ROOT = __dirname;
 const DIST = path.join(ROOT, 'dist');   // Built React dashboard
 const N8N_BASE_URL = process.env.N8N_BASE_URL || '';
 const N8N_API_KEY = process.env.N8N_API_KEY || '';
+const N8N_INVOICE_WEBHOOK_URL = process.env.N8N_INVOICE_WEBHOOK_URL || '';
 const N8N_TIMEOUT_MS = 8000;
 
 const MIME_TYPES = {
@@ -69,6 +70,31 @@ function getN8NDisplayUrl() {
   }
 }
 
+function parseJsonBody(req) {
+  return new Promise(function (resolve, reject) {
+    let body = '';
+    req.on('data', function (chunk) {
+      body += chunk;
+      if (body.length > 1024 * 1024) {
+        reject(new Error('Payload too large'));
+        req.destroy();
+      }
+    });
+    req.on('end', function () {
+      if (!body) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(body));
+      } catch (err) {
+        reject(new Error('Invalid JSON payload'));
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
 async function fetchJson(url, options) {
   const controller = new AbortController();
   const timeout = setTimeout(function () {
@@ -78,7 +104,14 @@ async function fetchJson(url, options) {
   try {
     const response = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
     const raw = await response.text();
-    const data = raw ? JSON.parse(raw) : null;
+    let data = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch (err) {
+        data = { raw: raw };
+      }
+    }
 
     if (!response.ok) {
       const message = data && data.message ? data.message : 'HTTP ' + response.status;
@@ -100,6 +133,15 @@ async function fetchN8N(pathname, searchParams) {
     Object.keys(searchParams).forEach(function (key) {
       if (searchParams[key] !== undefined && searchParams[key] !== null) {
         url.searchParams.set(key, searchParams[key]);
+      }
+
+      function buildInvoiceWebhookUrl(webhookPath) {
+        if (N8N_INVOICE_WEBHOOK_URL) return N8N_INVOICE_WEBHOOK_URL;
+        if (!N8N_BASE_URL) return null;
+        const base = trimSlash(N8N_BASE_URL);
+        const pathValue = String(webhookPath || '/webhook/invoice-processing');
+        const fixedPath = pathValue.startsWith('/') ? pathValue : '/' + pathValue;
+        return base + fixedPath;
       }
     });
   }
@@ -220,6 +262,46 @@ async function handleN8NOverview(res) {
     return;
   }
 
+  async function handleInvoiceProcessing(req, res) {
+    try {
+      const payload = await parseJsonBody(req);
+      const invoices = Array.isArray(payload.invoices) ? payload.invoices : [];
+      const webhookUrl = buildInvoiceWebhookUrl(payload.webhookPath);
+
+      if (!webhookUrl) {
+        writeJson(res, 503, {
+          error: 'n8n webhook is not configured. Set N8N_BASE_URL or N8N_INVOICE_WEBHOOK_URL.',
+        });
+        return;
+      }
+
+      const upstream = await fetchJson(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'openbalancer',
+          direction: payload.direction === 'sale' ? 'sale' : 'purchase',
+          invoices: invoices,
+        }),
+      });
+
+      writeJson(res, 200, {
+        ok: true,
+        sent: invoices.length,
+        webhookUrl: webhookUrl,
+        upstream,
+      });
+    } catch (err) {
+      writeJson(res, err.statusCode || 502, {
+        ok: false,
+        error: err.message || 'Failed to send invoices to n8n webhook.',
+      });
+    }
+  }
+
   try {
     const results = await Promise.all([
       fetchN8N('/rest/workflows', { limit: 250 }),
@@ -315,6 +397,11 @@ const server = http.createServer(async function (req, res) {
 
   if (req.method === 'GET' && safePath === '/api/n8n/overview') {
     await handleN8NOverview(res);
+    return;
+  }
+
+  if (req.method === 'POST' && safePath === '/api/invoices/process') {
+    await handleInvoiceProcessing(req, res);
     return;
   }
 

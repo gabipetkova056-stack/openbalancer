@@ -22,7 +22,10 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 | In-browser invoice **text** parser view | `src/components/views/InvoiceOCRView.jsx` | Production (wired into app) |
 | Invoice field extractor (BG/EN, ДДС, ЕИК, BGN) | `src/lib/parsers/invoiceParser.js` | Production (wired + tested) |
 | Microinvest Delta Pro **TransferData XML** export | `src/lib/parsers/microinvestXmlExport.js` | Source-backed (provisional, tested) |
+| Plus Minus XML export | `src/lib/parsers/plusMinusXmlExport.js` | Production (wired + tested) |
+| Ajur CSV export | `src/lib/parsers/ajurCsvExport.js` | Production (wired + tested) |
 | Delta Pro CSV reference/manual template | `src/lib/parsers/deltaProExport.js` | Reference/legacy template (not canonical) |
+| BG EIK validation helper | `src/lib/parsers/bgValidation.js` | Production (wired + tested) |
 | Supabase schema (`invoices`, `invoice_templates`) | `supabase-schema.sql` | Reference example |
 | Hermes OCR sub-agent definition | `hermes-ocr-agent.yaml` | Reference example |
 | Copilot ACP client for Hermes | `copilot-acp/hermes_copilot_acp.py` | Reference example |
@@ -39,9 +42,15 @@ Telegram  →  Hermes Agent (orchestrator)  →  OCR Agent (invoice2data + Visio
 
 Open `/dashboard` → **Invoice Parser**. Upload `.txt`/`.json`/`.csv` invoices;
 fields are extracted client-side, validated (`subtotal + tax = total`),
-listed with a confidence score, and exportable to CSV, a Delta Pro CSV
-reference template, or a Microinvest Delta Pro **TransferData XML** import file.
-No data leaves the browser.
+listed with a confidence score, EIK checksum flagging, and exportable to CSV,
+JSON, Ajur CSV, Plus Minus XML, a Delta Pro CSV reference template, or a
+Microinvest Delta Pro **TransferData XML** import file. The same view can POST
+the processed invoices to an n8n webhook via `/api/invoices/process`.
+
+Server-side webhook config:
+
+- `N8N_BASE_URL` + optional custom path from the UI, or
+- `N8N_INVOICE_WEBHOOK_URL` for a full explicit webhook URL.
 
 ### Microinvest Delta Pro XML / TransferData export
 

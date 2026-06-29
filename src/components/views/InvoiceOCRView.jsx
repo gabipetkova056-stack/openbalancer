@@ -9,11 +9,14 @@
  * and Supabase schema are reference examples in docs/invoice-ocr/.
  */
 import React, { useMemo, useRef, useState } from 'react';
-import { FileText, Upload, Download, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { FileText, Upload, Download, Trash2, CheckCircle2, AlertTriangle, CreditCard, Send } from 'lucide-react';
 import useStore from '../../store/useStore.js';
 import { parseInvoiceText, isInvoiceText } from '../../lib/parsers/invoiceParser.js';
 import { toDeltaProCsv } from '../../lib/parsers/deltaProExport.js';
 import { toMicroinvestTransferXml } from '../../lib/parsers/microinvestXmlExport.js';
+import { toAjurCsv } from '../../lib/parsers/ajurCsvExport.js';
+import { toPlusMinusXml } from '../../lib/parsers/plusMinusXmlExport.js';
+import { validateBulgarianEik } from '../../lib/parsers/bgValidation.js';
 
 const COMMANDS = [
   ['/upload_invoice', 'Качи фактура (PDF/снимка) за OCR обработка'],
@@ -23,6 +26,27 @@ const COMMANDS = [
   ['/export_deltapro_csv', 'Експорт Delta Pro CSV (reference/manual import)'],
   ['/export_deltapro_xml', 'Експорт Microinvest TransferData XML'],
   ['/ocr_stats', 'Статистика: точност, обработени, грешки'],
+];
+
+const PRICING_PLANS = [
+  {
+    name: 'Starter',
+    price: '29€/месец',
+    details: '200 фактури, CSV export',
+    link: 'https://buy.stripe.com/test_starter_openbalancer',
+  },
+  {
+    name: 'Pro',
+    price: '79€/месец',
+    details: '1000 фактури, всички експорти, n8n automation',
+    link: 'https://buy.stripe.com/test_pro_openbalancer',
+  },
+  {
+    name: 'Enterprise',
+    price: '299€/месец',
+    details: 'неограничени, white-label',
+    link: 'https://buy.stripe.com/test_enterprise_openbalancer',
+  },
 ];
 
 function money(v, ccy) {
@@ -38,18 +62,25 @@ function toCsv(rows) {
   return `${head}\n${body}`;
 }
 
+function toJson(rows) {
+  return JSON.stringify(rows, null, 2);
+}
+
 export default function InvoiceOCRView() {
   const { invoices, addInvoices, removeInvoice, clearInvoices, addToast, addError } = useStore();
   const fileRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [direction, setDirection] = useState('purchase');
+  const [showPricing, setShowPricing] = useState(false);
+  const [n8nWebhookPath, setN8nWebhookPath] = useState('/webhook/invoice-processing');
 
   const stats = useMemo(() => {
     const n = invoices.length;
     const sumTotal = invoices.reduce((a, r) => a + (r.total || 0), 0);
     const avgConf = n ? invoices.reduce((a, r) => a + (r.confidence || 0), 0) / n : 0;
     const errors = invoices.filter((r) => (r.confidence || 0) < 0.6).length;
-    return { n, sumTotal, avgConf, errors };
+    const invalidEik = invoices.filter((r) => r.eik && r.eikValidation && r.eikValidation.isValid === false).length;
+    return { n, sumTotal, avgConf, errors, invalidEik };
   }, [invoices]);
 
   async function handleFiles(files) {
@@ -64,7 +95,16 @@ export default function InvoiceOCRView() {
           addToast(`${file.name}: не изглежда като фактура`, 'error');
           continue;
         }
-        records.push(parseInvoiceText(text, file.name));
+        const parsed = parseInvoiceText(text, file.name);
+        const eikValidation = validateBulgarianEik(parsed.eik);
+        if (parsed.eik && !eikValidation.isValid) {
+          addToast(`${file.name}: невалиден ЕИК (${eikValidation.normalized})`, 'error');
+        }
+        records.push({
+          ...parsed,
+          eikValidation,
+          status: parsed.eik && !eikValidation.isValid ? 'needs_review' : parsed.status,
+        });
       }
       if (records.length) {
         addInvoices(records);
@@ -84,6 +124,16 @@ export default function InvoiceOCRView() {
     const a = document.createElement('a');
     a.href = url;
     a.download = 'invoices.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportJson() {
+    const data = toJson(invoices);
+    const url = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices.json';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -108,6 +158,42 @@ export default function InvoiceOCRView() {
     URL.revokeObjectURL(url);
   }
 
+  function exportAjurCsv() {
+    const csv = toAjurCsv(invoices);
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices-ajur.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportPlusMinusXml() {
+    const xml = toPlusMinusXml(invoices);
+    const url = URL.createObjectURL(new Blob([xml], { type: 'application/xml' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices-plusminus.xml';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function sendToN8N() {
+    try {
+      const response = await fetch('/api/invoices/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoices, direction, webhookPath: n8nWebhookPath }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'n8n processing failed');
+      addToast('Изпратено към n8n. Проверете email/Telegram webhook стъпките.');
+    } catch (err) {
+      addError({ message: `n8n process failed: ${err.message}`, context: 'invoice-n8n' }, 'invoice-n8n');
+      addToast('Грешка при изпращане към n8n', 'error');
+    }
+  }
+
   return (
     <div className="view-content">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
@@ -118,18 +204,25 @@ export default function InvoiceOCRView() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => setShowPricing(true)}>
+            <CreditCard size={14} /> Pricing
+          </button>
           <button className="btn btn-primary btn-sm" disabled={busy} onClick={() => fileRef.current?.click()}>
             <Upload size={14} /> {busy ? 'Processing…' : 'Upload'}
           </button>
           {invoices.length > 0 && (
             <>
               <button className="btn btn-ghost btn-sm" onClick={exportCsv}><Download size={14} /> Export CSV</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportJson}><Download size={14} /> Export JSON</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportAjurCsv}><Download size={14} /> Ajur CSV</button>
               <button className="btn btn-ghost btn-sm" onClick={exportDeltaProCsv}><Download size={14} /> Delta Pro CSV (reference)</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportPlusMinusXml}><Download size={14} /> Plus Minus XML</button>
               <select className="btn btn-ghost btn-sm" value={direction} onChange={(e) => setDirection(e.target.value)} aria-label="XML posting direction" title="Posting direction for Delta Pro XML">
                 <option value="purchase">Покупка</option>
                 <option value="sale">Продажба</option>
               </select>
               <button className="btn btn-ghost btn-sm" onClick={exportDeltaProXml}><Download size={14} /> Delta Pro XML</button>
+              <button className="btn btn-ghost btn-sm" onClick={sendToN8N}><Send size={14} /> Send to n8n</button>
               <button className="btn btn-ghost btn-sm" onClick={clearInvoices}><Trash2 size={14} /> Clear</button>
             </>
           )}
@@ -143,6 +236,7 @@ export default function InvoiceOCRView() {
         <StatCard label="Total value" value={money(stats.sumTotal, 'BGN')} />
         <StatCard label="Avg confidence" value={`${(stats.avgConf * 100).toFixed(0)}%`} />
         <StatCard label="Low confidence" value={stats.errors} />
+        <StatCard label="Invalid EIK" value={stats.invalidEik} />
       </div>
 
       {invoices.length === 0 ? (
@@ -164,6 +258,11 @@ export default function InvoiceOCRView() {
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
                     {r.invoiceDate || '—'} · subtotal {money(r.subtotal, r.currency)} · ДДС {money(r.tax, r.currency)} · total {money(r.total, r.currency)} · {(r.confidence * 100).toFixed(0)}%
                   </div>
+                  {r.eik && r.eikValidation && r.eikValidation.isValid === false && (
+                    <div style={{ fontSize: 'var(--text-xs)', color: 'var(--red)', marginTop: 2 }}>
+                      Невалиден ЕИК: {r.eikValidation.normalized} (флагнато за преглед)
+                    </div>
+                  )}
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={() => removeInvoice(r.id)} aria-label="Remove invoice"><Trash2 size={14} /></button>
               </div>
@@ -173,6 +272,23 @@ export default function InvoiceOCRView() {
       )}
 
       <div className="card" style={{ marginTop: 'var(--space-5)', padding: 'var(--space-4)' }}>
+        <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--space-2)' }}>n8n processing webhook</div>
+        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: 'var(--space-3)' }}>
+          <input
+            className="input"
+            value={n8nWebhookPath}
+            onChange={(e) => setN8nWebhookPath(e.target.value)}
+            placeholder="/webhook/invoice-processing"
+            style={{ minWidth: 260 }}
+            aria-label="n8n webhook path"
+          />
+          <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>
+            Същият endpoint се ползва за email/Telegram push след обработка в n8n.
+          </span>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-4)' }}>
         <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 'var(--space-2)' }}>Telegram commands</div>
         {COMMANDS.map(([cmd, desc]) => (
           <div key={cmd} style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
@@ -180,6 +296,31 @@ export default function InvoiceOCRView() {
           </div>
         ))}
       </div>
+
+      {showPricing && (
+        <div className="card" style={{ marginTop: 'var(--space-4)', padding: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div>
+              <div style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)' }}>Pricing</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>Zapochi bezplatno pokusel — 5 fakturi.</div>
+            </div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowPricing(false)}>Close</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
+            {PRICING_PLANS.map((plan) => (
+              <div key={plan.name} className="card" style={{ padding: 'var(--space-3)' }}>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)' }}>{plan.name}</div>
+                <div style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--blue)' }}>{plan.price}</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>{plan.details}</div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                  <a className="btn btn-primary btn-sm" href={plan.link} target="_blank" rel="noopener noreferrer">Stripe</a>
+                  <a className="btn btn-ghost btn-sm" href="https://revolut.me/openbalancer" target="_blank" rel="noopener noreferrer">Revolut</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
