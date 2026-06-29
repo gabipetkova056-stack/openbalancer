@@ -8,11 +8,11 @@
  *
  *   <TransferData xmlns="urn:Transfer">
  *     <Accountings>
- *       <Accounting Number=".." AccountingDate=".." Term=".." VatTerm="..">
- *         <Document DocumentType=".." Number=".." Date=".." />
+ *       <Accounting Number=".." AccountingDate="2026-01-15" Term="Покупка" VatTerm="..">
+ *         <Document DocumentType=".." Number=".." Date="2026-01-15" />
  *         <Company Name=".." Bulstat=".." VatNumber=".." />
  *         <AccountingDetails>
- *           <AccountingDetail AccountNumber=".." Debit=".." Credit=".." />
+ *           <AccountingDetail AccountNumber="602" Amount="1000.00" Direction="Debit" VatTerm="1" />
  *           ...balanced...
  *         </AccountingDetails>
  *       </Accounting>
@@ -22,8 +22,8 @@
  * This profile is PROVISIONAL: it mirrors the MICROINVEST-OCR TransferData
  * profile but is not yet live-validated against a Delta Pro import / golden
  * file. Account numbers and posting rules should be confirmed by an accountant
- * and the target Delta Pro version. Amounts use dot decimals (XML convention),
- * unlike the comma-decimal CSV reference export.
+ * and the target Delta Pro version. Amounts use dot decimals + ISO dates
+ * (YYYY-MM-DD), unlike the comma-decimal / dd.MM.yyyy CSV reference export.
  */
 
 /** DocumentType codes (MICROINVEST-OCR TransferData profile). */
@@ -71,11 +71,19 @@ function xmlAmount(v) {
   return n.toFixed(2);
 }
 
-/** ISO YYYY-MM-DD → dd.MM.yyyy; passthrough/empty if not ISO. */
+/** ISO YYYY-MM-DD passthrough; '' if missing/invalid (TransferData uses ISO dates). */
 function xmlDate(iso) {
   if (!iso) return '';
   const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
+  return m ? m[0] : '';
+}
+
+/** Human-readable Term label aligned with the source pipeline. */
+function termLabel(rec, direction) {
+  const dt = docTypeFor(rec);
+  if (dt === DOCUMENT_TYPE.credit_note) return 'Кредитно известие';
+  if (dt === DOCUMENT_TYPE.debit_note) return 'Дебитно известие';
+  return direction === 'sale' ? 'Продажба' : 'Покупка';
 }
 
 /** Resolve net/vat/gross from possibly-partial totals, synthesizing missing parts. */
@@ -92,19 +100,23 @@ function resolveTotals(rec) {
   return { net, vat, gross };
 }
 
-/** Build balanced double-entry detail rows for one invoice. */
-function buildDetails(rec, direction) {
+/**
+ * Build balanced double-entry detail rows for one invoice.
+ * Each row: { accountNumber, amount, direction: 'Debit'|'Credit', vatTerm }.
+ * Partner lines carry VatTerm 0; net/VAT lines carry the active term.
+ */
+function buildDetails(rec, direction, activeTerm) {
   const acc = ACCOUNTS[direction] || ACCOUNTS.purchase;
   const { net, vat, gross } = resolveTotals(rec);
   const rows = [];
   if (direction === 'sale') {
-    rows.push({ account: acc.partner, debit: gross, credit: 0 });
-    rows.push({ account: acc.net, debit: 0, credit: net });
-    if (vat > 0) rows.push({ account: acc.vat, debit: 0, credit: vat });
+    rows.push({ accountNumber: acc.partner, amount: gross, direction: 'Debit', vatTerm: activeTerm });
+    rows.push({ accountNumber: acc.net, amount: net, direction: 'Credit', vatTerm: activeTerm });
+    if (vat > 0) rows.push({ accountNumber: acc.vat, amount: vat, direction: 'Credit', vatTerm: activeTerm });
   } else {
-    rows.push({ account: acc.net, debit: net, credit: 0 });
-    if (vat > 0) rows.push({ account: acc.vat, debit: vat, credit: 0 });
-    rows.push({ account: acc.partner, debit: 0, credit: gross });
+    rows.push({ accountNumber: acc.net, amount: net, direction: 'Debit', vatTerm: activeTerm });
+    if (vat > 0) rows.push({ accountNumber: acc.vat, amount: vat, direction: 'Debit', vatTerm: activeTerm });
+    rows.push({ accountNumber: acc.partner, amount: gross, direction: 'Credit', vatTerm: 0 });
   }
   return rows;
 }
@@ -123,7 +135,7 @@ export function toMicroinvestTransferXml(invoices, options = {}) {
     const date = xmlDate(rec.invoiceDate);
     const term = vatTerm(direction, rec.taxRate, rec.tax);
     lines.push(
-      `    <Accounting Number="${number}" AccountingDate="${xmlEscape(date)}" Term="${xmlEscape(date)}" VatTerm="${term}">`
+      `    <Accounting Number="${number}" AccountingDate="${xmlEscape(date)}" Term="${xmlEscape(termLabel(rec, direction))}" VatTerm="${term}">`
     );
     lines.push(
       `      <Document DocumentType="${docTypeFor(rec)}" Number="${xmlEscape(rec.invoiceNumber)}" Date="${xmlEscape(date)}" />`
@@ -132,9 +144,9 @@ export function toMicroinvestTransferXml(invoices, options = {}) {
       `      <Company Name="${xmlEscape(rec.vendor)}" Bulstat="${xmlEscape(rec.eik)}" VatNumber="${xmlEscape(rec.eik ? 'BG' + rec.eik : '')}" />`
     );
     lines.push('      <AccountingDetails>');
-    for (const r of buildDetails(rec, direction)) {
+    for (const r of buildDetails(rec, direction, term)) {
       lines.push(
-        `        <AccountingDetail AccountNumber="${xmlEscape(r.account)}" Debit="${xmlAmount(r.debit)}" Credit="${xmlAmount(r.credit)}" />`
+        `        <AccountingDetail AccountNumber="${xmlEscape(r.accountNumber)}" Amount="${xmlAmount(r.amount)}" Direction="${r.direction}" VatTerm="${r.vatTerm}" />`
       );
     }
     lines.push('      </AccountingDetails>');

@@ -54,13 +54,13 @@ reference** than a best-effort `;` CSV. Structure:
 ```
 <TransferData xmlns="urn:Transfer">
   <Accountings>
-    <Accounting Number="1" AccountingDate="21.06.2026" Term="…" VatTerm="1">
-      <Document DocumentType="1" Number="INV-7" Date="21.06.2026" />
+    <Accounting Number="1" AccountingDate="2026-06-21" Term="Покупка" VatTerm="1">
+      <Document DocumentType="1" Number="INV-7" Date="2026-06-21" />
       <Company Name="Acme ЕООД" Bulstat="123456789" VatNumber="BG123456789" />
       <AccountingDetails>
-        <AccountingDetail AccountNumber="602"   Debit="1000.00" Credit="0.00" />
-        <AccountingDetail AccountNumber="453/1" Debit="200.00"  Credit="0.00" />
-        <AccountingDetail AccountNumber="401"   Debit="0.00"    Credit="1200.00" />
+        <AccountingDetail AccountNumber="602"   Amount="1000.00" Direction="Debit"  VatTerm="1" />
+        <AccountingDetail AccountNumber="453/1" Amount="200.00"  Direction="Debit"  VatTerm="1" />
+        <AccountingDetail AccountNumber="401"   Amount="1200.00" Direction="Credit" VatTerm="0" />
       </AccountingDetails>
     </Accounting>
   </Accountings>
@@ -70,7 +70,8 @@ reference** than a best-effort `;` CSV. Structure:
 Mappings (purchase default): Dr 602 net, Dr 453/1 VAT, Cr 401 gross. Sale: Dr
 411 gross, Cr 703 net, Cr 453/2 VAT. `DocumentType` 1 invoice / 2 debit note / 3
 credit note. `VatTerm` purchase 20% → 1, sale 20% → 7, exempt → 6, none → 0.
-Amounts use **dot decimals** (XML convention). When no line items exist, a
+Detail rows use `Amount` + `Direction="Debit|Credit"` + per-line `VatTerm`; dates
+are **ISO `YYYY-MM-DD`** and amounts use **dot decimals**. When no line items exist, a
 single summary line is synthesised from totals and postings are balanced by
 construction. The exporter XML-escapes vendor/document data. A **Покупка/Продажба**
 selector by the button switches postings/VatTerm between purchase and sale.

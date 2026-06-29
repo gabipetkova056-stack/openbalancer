@@ -1,6 +1,7 @@
 /**
  * Tests for microinvestXmlExport.js — Microinvest Delta Pro TransferData XML.
  * Source-backed reference: FINTECT-PRO/MICROINVEST-OCR (provisional profile).
+ * Detail rows use Amount + Direction + VatTerm, ISO dates, label Term.
  * Run with `npm test` (node:test, ESM via .mjs).
  */
 import test from 'node:test';
@@ -12,8 +13,10 @@ const sample = {
   eik: '123456789', subtotal: 1000, tax: 200, taxRate: 20, total: 1200, currency: 'BGN',
 };
 
-function sumAttr(xml, attr) {
-  return [...xml.matchAll(new RegExp(`${attr}="([\\d.]+)"`, 'g'))]
+/** Sum Amount attributes for rows with a given Direction. */
+function sumByDirection(xml, dir) {
+  return [...xml.matchAll(/Amount="([\d.]+)" Direction="(\w+)"/g)]
+    .filter((m) => m[2] === dir)
     .reduce((a, m) => a + Number(m[1]), 0);
 }
 
@@ -24,16 +27,19 @@ test('root namespace is urn:Transfer and uses Accountings/Accounting', () => {
   assert.match(xml, /<Accounting [^>]*VatTerm="1"/);
 });
 
-test('purchase invoice balances debit == credit', () => {
-  const xml = toMicroinvestTransferXml([sample], { direction: 'purchase' });
-  assert.equal(sumAttr(xml, 'Debit'), sumAttr(xml, 'Credit'));
-  assert.equal(sumAttr(xml, 'Debit'), 1200);
+test('detail rows use Amount/Direction/VatTerm, never Debit/Credit attrs', () => {
+  const xml = toMicroinvestTransferXml([sample]);
+  assert.match(xml, /AccountNumber="602" Amount="1000.00" Direction="Debit" VatTerm="1"/);
+  assert.ok(!/Debit="/.test(xml));
+  assert.ok(!/Credit="/.test(xml));
 });
 
-test('VAT line generated when tax present; dot decimals used', () => {
-  const xml = toMicroinvestTransferXml([sample]);
-  assert.match(xml, /AccountNumber="453\/1" Debit="200.00"/);
-  assert.match(xml, /Debit="1000.00"/);
+test('purchase invoice balances debit == credit by Amount/Direction', () => {
+  const xml = toMicroinvestTransferXml([sample], { direction: 'purchase' });
+  assert.equal(sumByDirection(xml, 'Debit'), sumByDirection(xml, 'Credit'));
+  assert.equal(sumByDirection(xml, 'Debit'), 1200);
+  assert.match(xml, /AccountNumber="453\/1" Amount="200.00" Direction="Debit" VatTerm="1"/);
+  assert.match(xml, /AccountNumber="401" Amount="1200.00" Direction="Credit" VatTerm="0"/);
 });
 
 test('no VAT line when tax absent', () => {
@@ -44,6 +50,14 @@ test('no VAT line when tax absent', () => {
 test('company carries Bulstat/EIK', () => {
   const xml = toMicroinvestTransferXml([sample]);
   assert.match(xml, /<Company [^>]*Bulstat="123456789"/);
+});
+
+test('XML dates stay ISO; Term is a label not a date', () => {
+  const xml = toMicroinvestTransferXml([sample]);
+  assert.match(xml, /AccountingDate="2026-06-21"/);
+  assert.match(xml, /<Document [^>]*Date="2026-06-21"/);
+  assert.match(xml, /Term="Покупка"/);
+  assert.ok(!/Term="21\.06\.2026"/.test(xml));
 });
 
 test('special chars are XML-escaped', () => {
@@ -57,9 +71,11 @@ test('missing fields never produce undefined', () => {
   assert.ok(!xml.includes('undefined'));
 });
 
-test('sale direction uses 411/703 mapping and balances', () => {
+test('sale: 411/703/453-2 mapping, Продажба term, balances', () => {
   const xml = toMicroinvestTransferXml([sample], { direction: 'sale' });
-  assert.match(xml, /VatTerm="7"/);
-  assert.match(xml, /AccountNumber="411"/);
-  assert.equal(sumAttr(xml, 'Debit'), sumAttr(xml, 'Credit'));
+  assert.match(xml, /Term="Продажба"/);
+  assert.match(xml, /AccountNumber="411" Amount="1200.00" Direction="Debit"/);
+  assert.match(xml, /AccountNumber="703" Amount="1000.00" Direction="Credit"/);
+  assert.match(xml, /AccountNumber="453\/2" Amount="200.00" Direction="Credit"/);
+  assert.equal(sumByDirection(xml, 'Debit'), sumByDirection(xml, 'Credit'));
 });
