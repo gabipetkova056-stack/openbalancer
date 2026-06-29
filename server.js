@@ -8,6 +8,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
+const DIST = path.join(ROOT, 'dist');   // Built React dashboard
 
 const MIME_TYPES = {
   '.html':  'text/html; charset=utf-8',
@@ -26,16 +27,13 @@ const MIME_TYPES = {
   '.txt':   'text/plain; charset=utf-8',
 };
 
-const server = http.createServer(function (req, res) {
-  // Security: prevent directory traversal
-  var safePath = path.normalize(req.url.split('?')[0]).replace(/^(\.\.[/\\])+/, '');
-  var filePath = path.join(ROOT, safePath === '/' ? 'index.html' : safePath);
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options':        'SAMEORIGIN',
+  'Referrer-Policy':        'strict-origin-when-cross-origin',
+};
 
-  // Serve index.html for paths with no file extension (SPA-style)
-  if (!path.extname(filePath)) {
-    filePath = path.join(ROOT, 'index.html');
-  }
-
+function serveFile(filePath, res) {
   var ext = path.extname(filePath).toLowerCase();
   var contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
@@ -50,21 +48,49 @@ const server = http.createServer(function (req, res) {
       }
       return;
     }
-
-    res.writeHead(200, {
-      'Content-Type':           contentType,
-      'Cache-Control':          'no-cache',
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options':        'DENY',
-      'Referrer-Policy':        'strict-origin-when-cross-origin',
-    });
+    res.writeHead(200, Object.assign({ 'Content-Type': contentType, 'Cache-Control': 'no-cache' }, SECURITY_HEADERS));
     res.end(data);
   });
+}
+
+const server = http.createServer(function (req, res) {
+  // Security: strip query string and prevent directory traversal
+  var urlPath = req.url.split('?')[0];
+  var safePath = path.normalize(urlPath).replace(/^(\.\.[/\\])+/, '');
+
+  // ── Dashboard SPA (/dashboard and /dashboard/*) ──────────────────────────────
+  // Route all /dashboard/* requests into the built Vite output in dist/.
+  if (safePath === '/dashboard' || safePath.startsWith('/dashboard/')) {
+    // Strip the /dashboard prefix for file lookup inside dist/
+    var subPath = safePath.slice('/dashboard'.length) || '/';
+    var ext = path.extname(subPath);
+
+    if (ext) {
+      // Static asset request (JS, CSS, etc.) — serve from dist/
+      var assetFile = path.join(DIST, subPath);
+      serveFile(assetFile, res);
+    } else {
+      // HTML/SPA fallback — serve dist/dashboard.html
+      serveFile(path.join(DIST, 'dashboard.html'), res);
+    }
+    return;
+  }
+
+  // ── Landing page and other static files ──────────────────────────────────────
+  var filePath = path.join(ROOT, safePath === '/' ? 'index.html' : safePath);
+
+  // SPA fallback for landing page routes without extensions
+  if (!path.extname(filePath)) {
+    filePath = path.join(ROOT, 'index.html');
+  }
+
+  serveFile(filePath, res);
 });
 
 server.listen(PORT, function () {
   console.log('\u2713 OpenBalancer server running at http://localhost:' + PORT);
-  console.log('  Root: ' + ROOT);
+  console.log('  Landing page :  http://localhost:' + PORT + '/');
+  console.log('  Dashboard    :  http://localhost:' + PORT + '/dashboard');
   console.log('  Press Ctrl+C to stop.\n');
 });
 

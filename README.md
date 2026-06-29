@@ -55,14 +55,100 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```
 openbalancer/
-├── index.html   # Main page — all sections in sequence
-├── style.css    # Design system + Clean Technical theme
-├── script.js    # Theme toggle, counters, scroll reveal, mobile nav
-├── server.js    # Zero-dependency Node.js static file server
-└── README.md    # This file
+├── index.html          # Landing page — all sections in sequence
+├── style.css           # Design system + Clean Technical theme
+├── script.js           # Theme toggle, counters, scroll reveal, mobile nav
+├── server.js           # Zero-dependency Node.js static file server
+├── dashboard.html      # React SPA entry point
+├── vite.config.js      # Vite build config (base: /dashboard/)
+├── package.json        # Node dependencies
+├── src/
+│   ├── main.jsx        # React 18 root
+│   ├── App.jsx         # Shell: sidebar + header + view router
+│   ├── store/
+│   │   └── useStore.js # Zustand global state (docs, views, errors, toasts)
+│   ├── lib/
+│   │   ├── schema.js               # StandardizedDocument schema + utilities
+│   │   ├── search.js               # Fuse.js fuzzy search index
+│   │   └── parsers/
+│   │       ├── claudeParser.js     # Claude conversations.json parser
+│   │       ├── chatgptParser.js    # ChatGPT conversations.json parser
+│   │       ├── genericParser.js    # Markdown / TXT / CSV fallback
+│   │       ├── archiveExtractor.js # ZIP + TAR browser extractor
+│   │       └── ingestionRouter.js  # Central routing + secret masking
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Sidebar.jsx         # Collapsible nav sidebar
+│   │   │   └── Header.jsx          # Top bar with search shortcut
+│   │   ├── ingestion/
+│   │   │   └── Dropzone.jsx        # Drag-and-drop file import
+│   │   ├── views/
+│   │   │   ├── HomeView.jsx        # Upload + document list + stats
+│   │   │   ├── ChatReplay.jsx      # Virtualized chat replay
+│   │   │   ├── InsightsTimeline.jsx# Action items + decisions + code
+│   │   │   ├── CrossReference.jsx  # Conflict detection across docs
+│   │   │   └── ErrorLogView.jsx    # In-session error log
+│   │   ├── search/
+│   │   │   └── CommandPalette.jsx  # Cmd+K fuzzy search overlay
+│   │   └── ui/
+│   │       ├── ErrorBoundary.jsx   # Class-based error boundary
+│   │       └── ToastContainer.jsx  # Slide-up notifications
+│   └── styles/
+│       └── globals.css             # Glassmorphism dark theme (800+ lines)
+└── README.md
 ```
 
-## Design System
+## Mission Control Dashboard
+
+The `/dashboard` route runs a full **React 18 SPA** (built with Vite) that ingests AI conversation exports and renders them interactively — 100% in-browser, no data ever sent to any server.
+
+### Features
+
+| Feature | Details |
+|---|---|
+| **Universal file import** | Drop `.zip`, `.tar`, `.json`, `.md`, `.txt`, `.csv` — archives extracted in-browser with JSZip |
+| **Multi-source parsers** | Auto-detects Claude `conversations.json`, ChatGPT exports, Markdown notes |
+| **Chat Replay** | Virtualized message list, role avatars, collapsible long messages, code block copy |
+| **Insights Timeline** | Extracted action items, decisions, and code blocks, filterable by type |
+| **Cross-Reference Engine** | Detects conflicts between MEMORY/TASKS/CALENDAR docs, overlap matrix |
+| **Cmd+K Search** | Fuse.js fuzzy search across all loaded documents with keyboard navigation |
+| **Error Boundaries** | Glassmorphism fallback UI for every major component, retry button |
+| **Secret masking** | API keys and tokens are automatically redacted before parsing |
+| **Zustand store** | Single source of truth; re-renders are minimal |
+| **Glassmorphism UI** | Dark theme: `#0A0A0F` bg · `#6C9CFF` blue accent · 24px blur backdrops |
+
+### Dashboard quick start
+
+```bash
+# Install dependencies
+npm install
+
+# Development server (hot-reload, port 5173)
+npm run dev
+# → http://localhost:5173/dashboard.html
+
+# Production build (outputs to dist/)
+npm run build
+
+# Serve everything (landing page + built dashboard)
+node server.js
+# → Landing page:  http://localhost:3000/
+# → Dashboard:     http://localhost:3000/dashboard
+```
+
+### Supported file formats
+
+| Format | Parser | Notes |
+|---|---|---|
+| Claude `conversations.json` | `claudeParser.js` | Handles array or `{conversations:[]}` shape |
+| ChatGPT `conversations.json` | `chatgptParser.js` | Traverses mapping tree |
+| Markdown `.md` | `genericParser.js` | Extracts headings as metadata |
+| Plain text `.txt` | `genericParser.js` | Paragraphs become messages |
+| CSV `.csv` | `genericParser.js` | First row as headers, rows as messages |
+| ZIP archive `.zip` | `archiveExtractor.js` | All contained files routed recursively |
+| TAR archive `.tar` | `archiveExtractor.js` | Pure-JS parser, max 10MB per file |
+
+
 
 **Theme:** Clean Technical  
 **Colors:** `#F8F9FA` bg · `#6366F1` indigo primary · `#10B981` green accent  

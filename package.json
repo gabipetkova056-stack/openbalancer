@@ -1,0 +1,39 @@
+{
+  "name": "openbalancer",
+  "version": "1.0.0",
+  "description": "> **Multi-LLM Orchestration** — Intelligent prompt routing across Claude, GPT-4o, Gemini, and local models with automated fallback, cost optimization, and full audit logging.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "vite --config vite.config.js",
+    "build": "vite build --config vite.config.js",
+    "preview": "vite preview --config vite.config.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabipetkova056-stack/openbalancer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gabipetkova056-stack/openbalancer/issues"
+  },
+  "homepage": "https://github.com/gabipetkova056-stack/openbalancer#readme",
+  "dependencies": {
+    "@uiw/react-md-editor": "^4.1.1",
+    "date-fns": "^4.4.0",
+    "fuse.js": "^7.4.2",
+    "jszip": "^3.10.1",
+    "lucide-react": "^1.22.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-syntax-highlighter": "^16.1.1",
+    "react-window": "^2.2.7",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.3",
+    "vite": "^8.1.0"
+  }
+}
