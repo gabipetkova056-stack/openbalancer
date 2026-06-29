@@ -18,9 +18,12 @@ test('English invoice: dot decimals + sum validation', () => {
 });
 
 test('Bulgarian invoice: comma decimals, BG date, ДДС, ЕИК, BGN', () => {
-  const t = 'Фактура № 12\nЕИК: 123456789\nДата на издаване: 21.06.2026\nДанъчна основа: 1000,00\nДДС (20%): 200,00\nОбща сума: 1200,00 лв.';
+  const t = 'Фактура № 12\nЕИК: 175074752\nДата на издаване: 21.06.2026\nДанъчна основа: 1000,00\nДДС (20%): 200,00\nОбща сума: 1200,00 лв.';
   const r = parseInvoiceText(t, 'b.pdf');
-  assert.equal(r.eik, '123456789');
+  assert.equal(r.eik, '175074752');
+  assert.equal(r.vatNumber, 'BG175074752');
+  assert.equal(r.registryValidation.eikValid, true);
+  assert.equal(r.registryValidation.viesEligible, true);
   assert.equal(r.subtotal, 1000);
   assert.equal(r.tax, 200);
   assert.equal(r.total, 1200);

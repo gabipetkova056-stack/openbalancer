@@ -94,6 +94,22 @@ export default function HomeView() {
 
   return (
     <div className="view-content">
+      <section className="card" style={{ padding: 'var(--space-5)', marginBottom: 'var(--space-4)' }}>
+        <h2 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, color: 'var(--text)', marginBottom: 'var(--space-2)' }}>
+          Универсална платформа за автоматизация на фактури
+        </h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
+          Експорт за Microinvest, Plus Minus, Ajur, CSV и JSON API + директен push към Email/Telegram.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+          <span className="badge badge-blue">Starter 29€ / 200 фактури</span>
+          <span className="badge badge-green">Pro 79€ / 1000 фактури</span>
+          <span className="badge badge-purple">Enterprise 299€ / white-label</span>
+          <span className="badge badge-amber">Zapier + Make ready</span>
+          <span className="badge badge-red">VIES/EIK checks</span>
+        </div>
+      </section>
+
       {/* Stats row */}
       {documents.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
