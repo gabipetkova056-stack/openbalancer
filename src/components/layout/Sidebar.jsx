@@ -5,13 +5,14 @@ import React from 'react';
 import {
   LayoutDashboard, MessageSquare, Lightbulb, GitCompare,
   AlertCircle, Upload, ChevronLeft, ChevronRight,
-  Layers, ExternalLink, Activity,
+  Layers, ExternalLink, Activity, FileText,
 } from 'lucide-react';
 import useStore from '../../store/useStore.js';
 
 const NAV = [
   { id: 'home',      icon: LayoutDashboard, label: 'Home / Upload' },
   { id: 'health',    icon: Activity,        label: 'Workflow Health' },
+  { id: 'invoices',  icon: FileText,        label: 'Invoice OCR' },
   { id: 'replay',    icon: MessageSquare,   label: 'Chat Replay' },
   { id: 'insights',  icon: Lightbulb,       label: 'Insights' },
   { id: 'crossref',  icon: GitCompare,      label: 'Cross-Reference' },
@@ -19,7 +20,7 @@ const NAV = [
 ];
 
 export default function Sidebar({ collapsed, onToggle }) {
-  const { activeView, setActiveView, documents } = useStore();
+  const { activeView, setActiveView, documents, invoices } = useStore();
 
   return (
     <aside
@@ -66,6 +67,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           let count = 0;
           if (id === 'replay' || id === 'insights')   count = documents.length;
           if (id === 'crossref') count = documents.filter((d) => d.type === 'note').length;
+          if (id === 'invoices') count = invoices.length;
 
           return (
             <button

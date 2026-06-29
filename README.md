@@ -110,6 +110,7 @@ The `/dashboard` route runs a full **React 18 SPA** (built with Vite) that inges
 | **Multi-source parsers** | Auto-detects Claude `conversations.json`, ChatGPT exports, Markdown notes |
 | **Chat Replay** | Virtualized message list, role avatars, collapsible long messages, code block copy |
 | **Insights Timeline** | Extracted action items, decisions, and code blocks, filterable by type |
+| **Invoice OCR** | In-browser invoice extraction (vendor, dates, ДДС/VAT, ЕИК, total) for `.pdf`/`.txt`/`.json`/`.csv` with CSV export — see `docs/invoice-ocr/` |
 | **Cross-Reference Engine** | Detects conflicts between MEMORY/TASKS/CALENDAR docs, overlap matrix |
 | **Cmd+K Search** | Fuse.js fuzzy search across all loaded documents with keyboard navigation |
 | **Error Boundaries** | Glassmorphism fallback UI for every major component, retry button |

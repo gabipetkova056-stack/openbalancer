@@ -47,8 +47,18 @@ const useStore = create((set, get) => ({
     set({ documents: [], activeDoc: null, searchIndex: null });
   },
 
+  // ── Invoices (OCR) ────────────────────────────────────────────────────────────
+  invoices: [],   // InvoiceRecord[]
+  addInvoices(records) {
+    set((s) => ({ invoices: [...records, ...s.invoices] }));
+  },
+  removeInvoice(id) {
+    set((s) => ({ invoices: s.invoices.filter((r) => r.id !== id) }));
+  },
+  clearInvoices() { set({ invoices: [] }); },
+
   // ── Active View ───────────────────────────────────────────────────────────────
-  activeView: 'home',   // 'home' | 'health' | 'replay' | 'insights' | 'crossref' | 'logs'
+  activeView: 'home',   // 'home' | 'health' | 'invoices' | 'replay' | 'insights' | 'crossref' | 'logs'
   setActiveView(view) { set({ activeView: view }); },
 
   // ── Error Log ─────────────────────────────────────────────────────────────────

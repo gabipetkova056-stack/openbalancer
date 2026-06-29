@@ -1,0 +1,20 @@
+name: ocr-agent
+description: Invoice OCR extraction and processing
+triggers:
+  - telegram_command: /upload_invoice
+  - webhook: /api/ocr/process
+capabilities:
+  - invoice2data (PDF -> structured JSON)
+  - OpenAI Vision (image -> text)
+  - Supabase write (store results)
+  - Telegram notify (send results)
+workflow:
+  - Receive file (PDF/image)
+  - Detect type (PDF vs image)
+  - If PDF -> invoice2data + pdfplumber
+  - If image -> OpenAI Vision API
+  - Parse structured fields (vendor, date, items, total, tax)
+  - Validate (subtotal + tax == total)
+  - Store in Supabase invoices table
+  - Notify via Telegram with summary
+  - On error -> escalate to human

@@ -13,11 +13,13 @@ import InsightsTimeline from './components/views/InsightsTimeline.jsx';
 import CrossReference from './components/views/CrossReference.jsx';
 import ErrorLogView from './components/views/ErrorLogView.jsx';
 import WorkflowHealthView from './components/views/WorkflowHealthView.jsx';
+import InvoiceOCRView from './components/views/InvoiceOCRView.jsx';
 import useStore from './store/useStore.js';
 
 const VIEWS = {
   home:     HomeView,
   health:   WorkflowHealthView,
+  invoices: InvoiceOCRView,
   replay:   ChatReplay,
   insights: InsightsTimeline,
   crossref: CrossReference,
