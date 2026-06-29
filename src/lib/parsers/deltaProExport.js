@@ -10,8 +10,9 @@
  *
  * The file should be saved in Windows-1251 encoding before import (the browser
  * download is UTF-8; convert on disk if Delta Pro mis-renders Cyrillic).
- * This formatter is a best-effort reference — confirm column order against your
- * Delta Pro version's import template.
+ * Delimiter/decimal/date follow common BG regional conventions, but the exact
+ * column order is NOT vendor-verified — confirm against your Delta Pro version's
+ * import template before production use.
  */
 
 const DP_COLUMNS = [

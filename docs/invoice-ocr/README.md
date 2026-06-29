@@ -41,15 +41,23 @@ listed with a confidence score, and exportable to CSV. No data leaves the browse
 ### Microinvest Delta Pro export
 
 The **Delta Pro** button exports invoices for Microinvest Delta Pro's *Импорт на
-документи*. The file is **best-effort, reference** formatting — confirm the column
-order against your Delta Pro version's import template:
+документи*. This format is **based on best-effort research and regional BG
+conventions, and should be confirmed against the target Delta Pro version /
+import template before production use.** It is a practical reference/default for
+manual import — not a vendor-verified canonical contract for all versions.
 
-- semicolon (`;`) field delimiter, one invoice per line, no header row
-- decimal comma for amounts (`1200,00`), `dd.MM.yyyy` dates
-- columns: `invoiceNumber; invoiceDate; vendor; eik; subtotal; tax; total; currency`
-- save as **Windows-1251** on disk if Cyrillic renders incorrectly (download is UTF-8)
+| Aspect | Value | Source confidence |
+|---|---|---|
+| Field delimiter | `;` (semicolon) | BG regional default; Delta Pro lets you pick the delimiter at import |
+| Decimal separator | comma (`1200,00`) | BG regional convention; must match Delta Pro's base/locale |
+| Date format | `dd.MM.yyyy` | BG regional default; depends on Delta Pro regional settings |
+| Encoding | Windows-1251 (UTF-8 download) | BG legacy convention; convert on disk if Cyrillic mis-renders |
+| Column order | `invoiceNumber; invoiceDate; vendor; eik; subtotal; tax; total; currency` | **Not strongly source-backed** — Delta Pro import is template/version dependent and column mapping is set during import |
 
-> Not validated against a live Delta Pro install; treat as a starting template.
+> Delimiter, decimal, and date formats follow common BG regional conventions, but
+> the **exact column order is not confirmed against an official Delta Pro template**.
+> Generate a sample export from your Delta Pro version and align the columns before
+> relying on this for real imports.
 
 ## Copilot ACP
 
