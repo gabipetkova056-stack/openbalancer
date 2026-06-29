@@ -103,7 +103,8 @@ function resolveTotals(rec) {
 /**
  * Build balanced double-entry detail rows for one invoice.
  * Each row: { accountNumber, amount, direction: 'Debit'|'Credit', vatTerm }.
- * Partner lines carry VatTerm 0; net/VAT lines carry the active term.
+ * Purchase 401 partner line carries VatTerm 0; net/VAT lines carry the active
+ * term. Sale 411 customer line carries the header/base term per the source profile.
  */
 function buildDetails(rec, direction, activeTerm) {
   const acc = ACCOUNTS[direction] || ACCOUNTS.purchase;
