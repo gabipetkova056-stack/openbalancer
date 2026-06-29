@@ -5,12 +5,13 @@ import React from 'react';
 import {
   LayoutDashboard, MessageSquare, Lightbulb, GitCompare,
   AlertCircle, Upload, ChevronLeft, ChevronRight,
-  Layers, ExternalLink,
+  Layers, ExternalLink, Activity,
 } from 'lucide-react';
 import useStore from '../../store/useStore.js';
 
 const NAV = [
   { id: 'home',      icon: LayoutDashboard, label: 'Home / Upload' },
+  { id: 'health',    icon: Activity,        label: 'Workflow Health' },
   { id: 'replay',    icon: MessageSquare,   label: 'Chat Replay' },
   { id: 'insights',  icon: Lightbulb,       label: 'Insights' },
   { id: 'crossref',  icon: GitCompare,      label: 'Cross-Reference' },

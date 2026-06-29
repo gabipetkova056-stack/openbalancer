@@ -48,7 +48,7 @@ const useStore = create((set, get) => ({
   },
 
   // ── Active View ───────────────────────────────────────────────────────────────
-  activeView: 'home',   // 'home' | 'replay' | 'insights' | 'crossref' | 'logs'
+  activeView: 'home',   // 'home' | 'health' | 'replay' | 'insights' | 'crossref' | 'logs'
   setActiveView(view) { set({ activeView: view }); },
 
   // ── Error Log ─────────────────────────────────────────────────────────────────

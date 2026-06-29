@@ -12,10 +12,12 @@ import ChatReplay from './components/views/ChatReplay.jsx';
 import InsightsTimeline from './components/views/InsightsTimeline.jsx';
 import CrossReference from './components/views/CrossReference.jsx';
 import ErrorLogView from './components/views/ErrorLogView.jsx';
+import WorkflowHealthView from './components/views/WorkflowHealthView.jsx';
 import useStore from './store/useStore.js';
 
 const VIEWS = {
   home:     HomeView,
+  health:   WorkflowHealthView,
   replay:   ChatReplay,
   insights: InsightsTimeline,
   crossref: CrossReference,

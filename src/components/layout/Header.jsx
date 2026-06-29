@@ -7,6 +7,7 @@ import useStore from '../../store/useStore.js';
 
 const VIEW_TITLES = {
   home:     'Home — Upload & Import',
+  health:   'Workflow Health',
   replay:   'Chat Replay',
   insights: 'Insights Timeline',
   crossref: 'Cross-Reference Engine',
