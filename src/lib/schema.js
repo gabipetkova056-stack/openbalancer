@@ -36,9 +36,19 @@
  * @property {*} rawSource
  */
 
-/** Generate a simple pseudo-UUID */
+/** Generate a cryptographically random ID using the Web Crypto API */
 export function generateId() {
-  return 'doc-' + Math.random().toString(36).slice(2, 10) + '-' + Date.now().toString(36);
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return 'doc-' + crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID (very old browsers)
+  const arr = new Uint8Array(16);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(arr);
+  } else {
+    for (let i = 0; i < arr.length; i++) arr[i] = (Date.now() + i) % 256;
+  }
+  return 'doc-' + Array.from(arr).map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 24);
 }
 
 /** Extract code blocks from a markdown string */

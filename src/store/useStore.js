@@ -54,9 +54,10 @@ const useStore = create((set, get) => ({
   // ── Error Log ─────────────────────────────────────────────────────────────────
   errorLog: [],   // [{ id, message, timestamp, source }]
   addError(message, source = 'unknown') {
+    const uid = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36);
     const entry = typeof message === 'string'
-      ? { id: Date.now() + Math.random(), message, timestamp: new Date().toISOString(), source }
-      : { id: Date.now() + Math.random(), timestamp: new Date().toISOString(), source, ...message };
+      ? { id: uid, message, timestamp: new Date().toISOString(), source }
+      : { id: uid, timestamp: new Date().toISOString(), source, ...message };
     set((s) => ({ errorLog: [...s.errorLog, entry] }));
   },
   clearErrorLog() { set({ errorLog: [] }); },
@@ -65,7 +66,7 @@ const useStore = create((set, get) => ({
   // ── Toasts ───────────────────────────────────────────────────────────────────
   toasts: [],   // [{ id, type, message }]
   addToast(message, type = 'success') {
-    const id = Date.now() + Math.random();
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36);
     set((s) => ({ toasts: [...s.toasts, { id, type, message }] }));
     setTimeout(() => {
       set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
