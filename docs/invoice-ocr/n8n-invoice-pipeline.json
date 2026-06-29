@@ -1,0 +1,30 @@
+{
+  "name": "Invoice OCR Pipeline",
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.webhook",
+      "name": "Upload Invoice",
+      "parameters": { "path": "invoice-upload", "httpMethod": "POST" }
+    },
+    {
+      "type": "n8n-nodes-base.executeCommand",
+      "name": "Run OCR",
+      "parameters": { "command": "invoice2data --input-reader pdfplumber --output-format json" }
+    },
+    {
+      "type": "n8n-nodes-base.openAi",
+      "name": "AI Enhancement",
+      "parameters": { "model": "gpt-4o", "prompt": "Extract structured invoice data: vendor, date, items, amounts" }
+    },
+    {
+      "type": "n8n-nodes-base.supabase",
+      "name": "Store Results",
+      "parameters": { "table": "invoices", "operation": "insert" }
+    },
+    {
+      "type": "n8n-nodes-base.telegram",
+      "name": "Notify",
+      "parameters": { "text": "✅ Invoice processed: {{$json.vendor}} — {{$json.total}}" }
+    }
+  ]
+}

@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Prompt Load Balancer — Multi-LLM Orchestration</title>
+  <meta name="description" content="Intelligent multi-LLM orchestration. Route prompts between Claude, GPT-4o, Gemini, and local models with automated fallback, cost optimization, and full logging.">
+  <meta name="keywords" content="ai, load balancer, llm, claude, gpt, gemini, n8n, supabase, orchestration">
+  <meta name="author" content="Wallestars">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:title"       content="AI Prompt Load Balancer — Multi-LLM Orchestration">
+  <meta property="og:description" content="Intelligent routing across Claude, GPT-4o, Gemini, and local models with automated fallback and cost optimization.">
+  <meta property="og:url"         content="https://openbalancer.wallestars.ai">
+  <meta property="og:locale"      content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="summary_large_image">
+  <meta name="twitter:title"       content="AI Prompt Load Balancer — Multi-LLM Orchestration">
+  <meta name="twitter:description" content="Intelligent routing across Claude, GPT-4o, Gemini, and local models.">
+
+  <link rel="canonical" href="https://openbalancer.wallestars.ai">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%236366F1'/><rect x='4' y='14' width='8' height='4' rx='2' fill='white' opacity='0.9'/><line x1='12' y1='16' x2='16' y2='10' stroke='white' stroke-width='1.5'/><line x1='12' y1='16' x2='16' y2='16' stroke='white' stroke-width='1.5'/><line x1='12' y1='16' x2='16' y2='22' stroke='white' stroke-width='1.5'/><rect x='16' y='7' width='10' height='6' rx='2' fill='none' stroke='white' stroke-width='1.5' opacity='0.7'/><rect x='16' y='13' width='10' height='6' rx='2' fill='white' opacity='0.9'/><rect x='16' y='19' width='10' height='6' rx='2' fill='none' stroke='white' stroke-width='1.5' opacity='0.7'/></svg>">
+
+  <!-- Fonts: General Sans (Fontshare) + Inter + JetBrains Mono (Google Fonts) -->
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Skip to main content -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- ====== HEADER ====== -->
+  <header class="site-header" id="site-header" role="banner">
+    <div class="container">
+      <nav class="header-inner" aria-label="Primary navigation">
+
+        <!-- Logo -->
+        <a href="/" class="site-logo" aria-label="AI Prompt Load Balancer — Home">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="32" height="32" rx="6" fill="var(--color-primary)"/>
+            <rect x="4" y="13.5" width="8" height="5" rx="2" fill="white" opacity="0.9"/>
+            <line x1="12" y1="16" x2="17" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="16" x2="17" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="12" y1="16" x2="17" y2="22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="17" y="7" width="10" height="5.5" rx="2" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+            <rect x="17" y="13.25" width="10" height="5.5" rx="2" fill="white" opacity="0.9"/>
+            <rect x="17" y="19.5" width="10" height="5.5" rx="2" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+          </svg>
+          <span class="logo-text">Open<span>Balancer</span></span>
+        </a>
+
+        <!-- Desktop nav links -->
+        <ul class="site-nav" role="list">
+          <li><a href="#architecture" class="nav-link">Architecture</a></li>
+          <li><a href="#comparison"   class="nav-link">Model Comparison</a></li>
+          <li><a href="#strategies"   class="nav-link">Strategies</a></li>
+          <li><a href="#patterns"     class="nav-link">Patterns</a></li>
+          <li><a href="#risk"         class="nav-link">Risk Matrix</a></li>
+        </ul>
+
+        <!-- Header actions -->
+        <div class="header-actions">
+          <button class="theme-btn" data-theme-toggle aria-label="Switch to dark mode" title="Toggle dark mode">
+            <!-- Icon injected by JS -->
+          </button>
+          <a href="https://github.com/gabipetkova056-stack/openbalancer" class="btn-header-cta" target="_blank" rel="noopener noreferrer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.165 6.839 9.49.5.09.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.577.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button class="mobile-menu-btn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-nav" data-mobile-toggle>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="6"  x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </nav>
+
+      <!-- Mobile navigation -->
+      <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" hidden>
+        <a href="#architecture" class="nav-link" data-mobile-nav-link>Architecture</a>
+        <a href="#comparison"   class="nav-link" data-mobile-nav-link>Model Comparison</a>
+        <a href="#strategies"   class="nav-link" data-mobile-nav-link>Strategies</a>
+        <a href="#patterns"     class="nav-link" data-mobile-nav-link>Patterns</a>
+        <a href="#risk"         class="nav-link" data-mobile-nav-link>Risk Matrix</a>
+        <a href="https://github.com/gabipetkova056-stack/openbalancer" class="btn btn-primary" target="_blank" rel="noopener noreferrer" style="margin-top:var(--space-2);">
+          View on GitHub
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ====== MAIN CONTENT ====== -->
+  <main id="main-content">
+
+    <!-- ── HERO ──────────────────────────────────────────── -->
+    <section class="hero" id="hero" aria-labelledby="hero-heading">
+      <div class="container">
+        <div class="hero-grid">
+
+          <!-- Left: Text content -->
+          <div class="hero-text">
+            <div class="tech-badge" data-reveal>
+              <code>n8n + Supabase + iOS Shortcuts</code>
+            </div>
+            <h1 class="hero-title" id="hero-heading" data-reveal data-reveal-delay="100">
+              Multi-LLM<br>
+              <span class="accent">Orchestration</span><br>
+              at Scale.
+            </h1>
+            <p class="hero-tagline" data-reveal data-reveal-delay="200">
+              Intelligent prompt routing across Claude, GPT-4o, Gemini, and local
+              models. Automated fallback, cost optimization, and full audit logging
+              — built on n8n workflows with Supabase persistence.
+            </p>
+            <div class="hero-ctas" data-reveal data-reveal-delay="300">
+              <a href="#architecture" class="btn btn-primary btn-lg">View Architecture</a>
+              <a href="#comparison"   class="btn btn-outline btn-lg">Compare Models</a>
+            </div>
+
+            <!-- Quick stats -->
+            <div class="hero-stats" data-reveal data-reveal-delay="400">
+              <div class="hero-stat">
+                <span class="hero-stat-value"><span class="counter" data-target="4">0</span>+</span>
+                <span class="hero-stat-label">LLM Providers</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-stat-value"><span class="counter" data-target="99">0</span>%</span>
+                <span class="hero-stat-label">Uptime SLA</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-stat-value">&lt;<span class="counter" data-target="50">0</span>ms</span>
+                <span class="hero-stat-label">Routing Latency</span>
+              </div>
+              <div class="hero-stat">
+                <span class="hero-stat-value"><span class="counter" data-target="196">0</span>+</span>
+                <span class="hero-stat-label">n8n Workflows</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: SVG flow diagram -->
+          <div class="hero-diagram" data-reveal data-reveal-delay="200" aria-hidden="false">
+            <svg viewBox="0 0 420 320" fill="none" xmlns="http://www.w3.org/2000/svg"
+                 aria-label="AI Load Balancer flow diagram — prompt routes from iOS/API input through the load balancer to Claude, GPT-4o, Gemini, and local models" role="img">
+
+              <defs>
+                <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5"
+                        markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-border)"/>
+                </marker>
+                <marker id="arrowhead-primary" viewBox="0 0 10 10" refX="9" refY="5"
+                        markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-primary)"/>
+                </marker>
+
+                <!-- Glow filter for balancer node -->
+                <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="4" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <!-- Background grid -->
+              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--color-border)" stroke-width="0.5" opacity="0.4"/>
+              </pattern>
+              <rect width="420" height="320" fill="url(#grid)" rx="12" opacity="0.5"/>
+
+              <!-- Input node: iOS / API -->
+              <rect x="16" y="132" width="84" height="48" rx="8"
+                    fill="var(--color-primary-light)"
+                    stroke="var(--color-primary)" stroke-width="1.5"/>
+              <text x="58" y="152" text-anchor="middle"
+                    fill="var(--color-primary)" font-size="11"
+                    font-family="var(--font-mono, monospace)" font-weight="700">iOS /</text>
+              <text x="58" y="168" text-anchor="middle"
+                    fill="var(--color-primary)" font-size="11"
+                    font-family="var(--font-mono, monospace)" font-weight="700">API</text>
+
+              <!-- Arrow: input → balancer -->
+              <path class="flow-path" d="M 100 156 L 150 156"
+                    stroke="var(--color-primary)" stroke-width="1.5" stroke-dasharray="4 3"
+                    marker-end="url(#arrowhead-primary)"/>
+
+              <!-- Balancer node (center, emphasized) -->
+              <rect x="152" y="114" width="108" height="84" rx="10"
+                    fill="var(--color-surface)"
+                    stroke="var(--color-primary)" stroke-width="2"
+                    filter="url(#glow)"/>
+              <text x="206" y="143" text-anchor="middle"
+                    fill="var(--color-text)" font-size="11"
+                    font-family="var(--font-mono, monospace)" font-weight="800"
+                    letter-spacing="0.5">LOAD</text>
+              <text x="206" y="159" text-anchor="middle"
+                    fill="var(--color-text)" font-size="11"
+                    font-family="var(--font-mono, monospace)" font-weight="800"
+                    letter-spacing="0.5">BALANCER</text>
+              <text x="206" y="177" text-anchor="middle"
+                    fill="var(--color-primary)" font-size="9"
+                    font-family="var(--font-mono, monospace)">route + fallback</text>
+
+              <!-- Arrows: balancer → LLMs -->
+              <path class="flow-path" d="M 260 136 L 300 80"
+                    stroke="var(--color-border)" stroke-width="1.5"
+                    marker-end="url(#arrowhead)" style="animation-delay:0.2s"/>
+              <path class="flow-path" d="M 260 156 L 300 156"
+                    stroke="var(--color-border)" stroke-width="1.5"
+                    marker-end="url(#arrowhead)" style="animation-delay:0.4s"/>
+              <path class="flow-path" d="M 260 176 L 300 232"
+                    stroke="var(--color-border)" stroke-width="1.5"
+                    marker-end="url(#arrowhead)" style="animation-delay:0.6s"/>
+              <path class="flow-path" d="M 260 193 L 300 284"
+                    stroke="var(--color-border)" stroke-width="1.5"
+                    marker-end="url(#arrowhead)" style="animation-delay:0.8s"/>
+
+              <!-- LLM nodes -->
+              <!-- Claude -->
+              <rect x="300" y="60" width="102" height="38" rx="6"
+                    fill="var(--color-surface-2)" stroke="var(--color-border)" stroke-width="1"/>
+              <circle cx="316" cy="79" r="5" fill="var(--color-accent-amber)"/>
+              <text x="370" y="83" text-anchor="middle"
+                    fill="var(--color-text-muted)" font-size="11"
+                    font-family="var(--font-mono, monospace)">Claude</text>
+
+              <!-- GPT-4o -->
+              <rect x="300" y="137" width="102" height="38" rx="6"
+                    fill="var(--color-surface-2)" stroke="var(--color-primary)" stroke-width="1.5"/>
+              <circle cx="316" cy="156" r="5" fill="var(--color-accent-green)"/>
+              <text x="370" y="160" text-anchor="middle"
+                    fill="var(--color-text)" font-size="11"
+                    font-family="var(--font-mono, monospace)" font-weight="600">GPT-4o</text>
+
+              <!-- Gemini -->
+              <rect x="300" y="213" width="102" height="38" rx="6"
+                    fill="var(--color-surface-2)" stroke="var(--color-border)" stroke-width="1"/>
+              <circle cx="316" cy="232" r="5" fill="var(--color-accent-blue)"/>
+              <text x="370" y="236" text-anchor="middle"
+                    fill="var(--color-text-muted)" font-size="11"
+                    font-family="var(--font-mono, monospace)">Gemini</text>
+
+              <!-- Local / Ollama -->
+              <rect x="300" y="265" width="102" height="38" rx="6"
+                    fill="var(--color-surface-2)" stroke="var(--color-border)" stroke-width="1"/>
+              <circle cx="316" cy="284" r="5" fill="var(--color-text-faint)"/>
+              <text x="370" y="288" text-anchor="middle"
+                    fill="var(--color-text-muted)" font-size="11"
+                    font-family="var(--font-mono, monospace)">Ollama</text>
+
+              <!-- Active indicator label -->
+              <text x="402" y="152" text-anchor="middle"
+                    fill="var(--color-accent-green)" font-size="8"
+                    font-family="var(--font-mono, monospace)" font-weight="700">●ACTIVE</text>
+
+              <!-- Label: n8n webhook -->
+              <rect x="160" y="210" width="88" height="22" rx="4"
+                    fill="var(--color-primary-light)"
+                    stroke="color-mix(in oklab, var(--color-primary) 30%, transparent)" stroke-width="1"/>
+              <text x="204" y="225" text-anchor="middle"
+                    fill="var(--color-primary)" font-size="9"
+                    font-family="var(--font-mono, monospace)" font-weight="600">n8n webhook</text>
+
+              <!-- Label: Supabase log -->
+              <rect x="160" y="242" width="88" height="22" rx="4"
+                    fill="color-mix(in oklab, var(--color-accent-green) 10%, transparent)"
+                    stroke="color-mix(in oklab, var(--color-accent-green) 30%, transparent)" stroke-width="1"/>
+              <text x="204" y="257" text-anchor="middle"
+                    fill="var(--color-accent-green)" font-size="9"
+                    font-family="var(--font-mono, monospace)" font-weight="600">Supabase log</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STATS BAR ─────────────────────────────────────── -->
+    <div class="stats-bar" aria-label="System statistics">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-number"><span class="counter" data-target="4" data-suffix="+">0</span></span>
+            <span class="stat-label">LLM Providers</span>
+            <span class="stat-sub">Claude · GPT · Gemini · Local</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number"><span class="counter" data-target="196" data-suffix="+">0</span></span>
+            <span class="stat-label">n8n Workflows</span>
+            <span class="stat-sub">Automated orchestration</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number"><span class="counter" data-target="99" data-suffix=".9%">0</span></span>
+            <span class="stat-label">Uptime SLA</span>
+            <span class="stat-sub">Multi-region fallback</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">&lt;<span class="counter" data-target="50" data-suffix="ms">0</span></span>
+            <span class="stat-label">Routing Overhead</span>
+            <span class="stat-sub">Zero-latency selection</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ARCHITECTURE ──────────────────────────────────── -->
+    <section class="architecture-section" id="architecture" aria-labelledby="arch-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">System Architecture</div>
+          <h2 class="section-title" id="arch-heading">Multi-Layer Orchestration Stack</h2>
+          <p class="section-subtitle">
+            Modular, replaceable architecture with clean separation of concerns.
+            Each layer is independently deployable and scalable.
+          </p>
+        </div>
+
+        <div class="arch-diagram" data-reveal data-reveal-delay="100" role="img" aria-label="System architecture layers">
+          <!-- Layer 1: Client -->
+          <div class="arch-layer">
+            <div class="arch-layer-label">Client Layer</div>
+            <div class="arch-layer-nodes" role="list">
+              <div class="arch-node arch-node--primary" role="listitem">iOS Shortcuts</div>
+              <div class="arch-node arch-node--primary" role="listitem">Web App</div>
+              <div class="arch-node arch-node--primary" role="listitem">Telegram Bot</div>
+              <div class="arch-node arch-node--primary" role="listitem">Discord</div>
+              <div class="arch-node arch-node--primary" role="listitem">REST API</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow-row" aria-hidden="true">
+            <div class="arch-arrow">↓</div>
+          </div>
+
+          <!-- Layer 2: Gateway / Load Balancer -->
+          <div class="arch-layer arch-layer--highlight">
+            <div class="arch-layer-label">Gateway / Load Balancer</div>
+            <div class="arch-layer-nodes" role="list">
+              <div class="arch-node arch-node--accent" role="listitem">n8n Webhook Router</div>
+              <div class="arch-node arch-node--accent" role="listitem">OpenClaw Gateway :18789</div>
+              <div class="arch-node arch-node--accent" role="listitem">Rate Limiter + Auth</div>
+              <div class="arch-node arch-node--accent" role="listitem">Strategy Selector</div>
+              <div class="arch-node arch-node--accent" role="listitem">Cost Tracker</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow-row" aria-hidden="true">
+            <div class="arch-arrow">↓</div>
+          </div>
+
+          <!-- Layer 3: AI Models -->
+          <div class="arch-layer">
+            <div class="arch-layer-label">AI Model Layer</div>
+            <div class="arch-layer-nodes" role="list">
+              <div class="arch-node" role="listitem">Claude Sonnet 4</div>
+              <div class="arch-node" role="listitem">Claude Opus 4</div>
+              <div class="arch-node" role="listitem">GPT-4o</div>
+              <div class="arch-node" role="listitem">GPT-4o-mini</div>
+              <div class="arch-node" role="listitem">Gemini 2.5 Pro</div>
+              <div class="arch-node" role="listitem">Local (Ollama)</div>
+              <div class="arch-node" role="listitem">Deepseek-Coder</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow-row" aria-hidden="true">
+            <div class="arch-arrow">↓</div>
+          </div>
+
+          <!-- Layer 4: Data -->
+          <div class="arch-layer">
+            <div class="arch-layer-label">Data &amp; Tools Layer</div>
+            <div class="arch-layer-nodes" role="list">
+              <div class="arch-node arch-node--muted" role="listitem">Supabase DB</div>
+              <div class="arch-node arch-node--muted" role="listitem">Redis Cache</div>
+              <div class="arch-node arch-node--muted" role="listitem">GitHub API</div>
+              <div class="arch-node arch-node--muted" role="listitem">Wallester API</div>
+              <div class="arch-node arch-node--muted" role="listitem">Airtop Browser</div>
+              <div class="arch-node arch-node--muted" role="listitem">Audit Logs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MODEL COMPARISON TABLE ──────────────────────── -->
+    <section class="comparison-section" id="comparison" aria-labelledby="comparison-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">Model Comparison</div>
+          <h2 class="section-title" id="comparison-heading">LLM Provider Benchmarks</h2>
+          <p class="section-subtitle">
+            Real-world performance metrics used by the load balancer to select the optimal model
+            for each prompt type, cost envelope, and latency requirement.
+          </p>
+        </div>
+
+        <div class="table-wrapper" data-reveal data-reveal-delay="100">
+          <table class="comparison-table" aria-label="LLM provider comparison table">
+            <thead>
+              <tr>
+                <th scope="col">Model</th>
+                <th scope="col">Context</th>
+                <th scope="col">Avg. Latency</th>
+                <th scope="col">Cost / 1M tokens</th>
+                <th scope="col">Code Quality</th>
+                <th scope="col">Reasoning</th>
+                <th scope="col">Availability</th>
+                <th scope="col">Fallback Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--claude" aria-hidden="true"></div>
+                    Claude Sonnet 4
+                  </div>
+                </td>
+                <td class="text-mono">200K</td>
+                <td><span class="cell-good">~1.2s</span></td>
+                <td class="text-mono">$3 / $15</td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="cell-good">99.9%</span></td>
+                <td class="text-mono">#1</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--claude" aria-hidden="true"></div>
+                    Claude Opus 4
+                  </div>
+                </td>
+                <td class="text-mono">200K</td>
+                <td><span class="cell-warn">~3.8s</span></td>
+                <td class="text-mono">$15 / $75</td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="badge badge--green">Superior</span></td>
+                <td><span class="cell-good">99.9%</span></td>
+                <td class="text-mono">#2 (complex)</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--gpt" aria-hidden="true"></div>
+                    GPT-4o
+                  </div>
+                </td>
+                <td class="text-mono">128K</td>
+                <td><span class="cell-good">~1.0s</span></td>
+                <td class="text-mono">$2.5 / $10</td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="cell-good">99.8%</span></td>
+                <td class="text-mono">#1 (speed)</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--gpt" aria-hidden="true"></div>
+                    GPT-4o-mini
+                  </div>
+                </td>
+                <td class="text-mono">128K</td>
+                <td><span class="cell-good">~0.5s</span></td>
+                <td class="text-mono">$0.15 / $0.60</td>
+                <td><span class="badge badge--amber">Good</span></td>
+                <td><span class="badge badge--amber">Good</span></td>
+                <td><span class="cell-good">99.8%</span></td>
+                <td class="text-mono">#1 (budget)</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--gemini" aria-hidden="true"></div>
+                    Gemini 2.5 Pro
+                  </div>
+                </td>
+                <td class="text-mono">1M</td>
+                <td><span class="cell-warn">~2.1s</span></td>
+                <td class="text-mono">$1.25 / $5</td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="cell-good">99.7%</span></td>
+                <td class="text-mono">#2 (context)</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--local" aria-hidden="true"></div>
+                    Ollama / Local
+                  </div>
+                </td>
+                <td class="text-mono">8–128K</td>
+                <td><span class="cell-warn">~2–8s</span></td>
+                <td class="text-mono text-muted">$0 (self-hosted)</td>
+                <td><span class="badge badge--amber">Varies</span></td>
+                <td><span class="badge badge--amber">Good</span></td>
+                <td><span class="cell-warn">Variable</span></td>
+                <td class="text-mono">#1 (private)</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="model-name">
+                    <div class="model-dot model-dot--local" aria-hidden="true"></div>
+                    Deepseek-Coder
+                  </div>
+                </td>
+                <td class="text-mono">16K</td>
+                <td><span class="cell-warn">~3–6s</span></td>
+                <td class="text-mono text-muted">$0 (self-hosted)</td>
+                <td><span class="badge badge--green">Excellent</span></td>
+                <td><span class="badge badge--amber">Good</span></td>
+                <td><span class="cell-warn">Variable</span></td>
+                <td class="text-mono">#1 (code only)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── STRATEGIES ───────────────────────────────────── -->
+    <section class="strategies-section" id="strategies" aria-labelledby="strategies-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">Balancing Strategies</div>
+          <h2 class="section-title" id="strategies-heading">Routing Algorithms</h2>
+          <p class="section-subtitle">
+            Six configurable strategies to match your throughput, budget, and latency
+            requirements. Switch strategies at runtime without redeployment.
+          </p>
+        </div>
+
+        <div class="strategies-grid">
+
+          <!-- 1: Cost-Optimized -->
+          <article class="strategy-card" data-reveal data-reveal-delay="100">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">cost-optimized</h3>
+            <p class="strategy-desc">
+              Routes to the cheapest model that meets minimum quality thresholds. Ideal for high-volume
+              batch jobs and non-critical tasks. Falls back to premium tiers on degraded output.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--green">Budget</span>
+              <span class="badge badge--amber">High Volume</span>
+            </div>
+          </article>
+
+          <!-- 2: Lowest Latency -->
+          <article class="strategy-card" data-reveal data-reveal-delay="150">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">lowest-latency</h3>
+            <p class="strategy-desc">
+              Always selects the provider with the lowest p50 response time based on rolling
+              30-second health checks. Designed for real-time user-facing interactions.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--green">Real-Time</span>
+              <span class="badge badge--purple">UX Priority</span>
+            </div>
+          </article>
+
+          <!-- 3: Round Robin -->
+          <article class="strategy-card" data-reveal data-reveal-delay="200">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">round-robin</h3>
+            <p class="strategy-desc">
+              Distributes requests evenly across all healthy providers in sequence. Prevents
+              rate-limit bottlenecks and ensures balanced API quota consumption.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--amber">Balanced</span>
+              <span class="badge badge--amber">Rate Limits</span>
+            </div>
+          </article>
+
+          <!-- 4: Quality-First -->
+          <article class="strategy-card" data-reveal data-reveal-delay="100">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">quality-first</h3>
+            <p class="strategy-desc">
+              Always selects the highest-rated model for the detected task type. Uses prompt
+              classification (code, reasoning, creative) to match model strengths.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--green">Premium</span>
+              <span class="badge badge--purple">Task-Aware</span>
+            </div>
+          </article>
+
+          <!-- 5: Weighted -->
+          <article class="strategy-card" data-reveal data-reveal-delay="150">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">weighted</h3>
+            <p class="strategy-desc">
+              Traffic is split proportionally across providers using configurable weights.
+              Supports gradual migrations, A/B testing, and fine-grained budget allocation.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--amber">A/B Testing</span>
+              <span class="badge badge--green">Migration</span>
+            </div>
+          </article>
+
+          <!-- 6: Failover -->
+          <article class="strategy-card" data-reveal data-reveal-delay="200">
+            <div class="strategy-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+            </div>
+            <h3 class="strategy-title">failover</h3>
+            <p class="strategy-desc">
+              Maintains a strict priority order. Routes to the primary until it degrades past
+              a configurable error-rate threshold, then automatically cascades to backup providers.
+            </p>
+            <div class="strategy-meta">
+              <span class="badge badge--green">Reliability</span>
+              <span class="badge badge--purple">Auto-Heal</span>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PATTERNS ──────────────────────────────────────── -->
+    <section class="patterns-section" id="patterns" aria-labelledby="patterns-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">Integration Patterns</div>
+          <h2 class="section-title" id="patterns-heading">Common Usage Patterns</h2>
+          <p class="section-subtitle">
+            Ready-to-use configurations for the most frequent orchestration scenarios.
+            Each pattern includes n8n workflow snippets and Supabase schema references.
+          </p>
+        </div>
+
+        <div class="patterns-grid">
+
+          <!-- Pattern 1: iOS Shortcut trigger -->
+          <article class="pattern-card" data-reveal data-reveal-delay="100">
+            <div class="pattern-header">
+              <h3 class="pattern-title">iOS Shortcut → n8n → LLM</h3>
+              <span class="badge badge--green">Mobile</span>
+            </div>
+            <div class="pattern-body">
+              <p class="pattern-desc">
+                Trigger a prompt from iOS Shortcuts via webhook. The n8n workflow
+                selects the model, invokes it, and returns the response to the Shortcut.
+              </p>
+              <div class="code-block" role="region" aria-label="iOS shortcut workflow configuration code">
+                <pre><span class="token-comment">// n8n webhook node config</span>
+<span class="token-punct">{</span>
+  <span class="token-key">"method"</span><span class="token-punct">:</span> <span class="token-str">"POST"</span><span class="token-punct">,</span>
+  <span class="token-key">"path"</span><span class="token-punct">:</span>   <span class="token-str">"/prompt"</span><span class="token-punct">,</span>
+  <span class="token-key">"body"</span><span class="token-punct">:</span>  <span class="token-punct">{</span>
+    <span class="token-key">"prompt"</span><span class="token-punct">:</span>   <span class="token-str">"{{$json.text}}"</span><span class="token-punct">,</span>
+    <span class="token-key">"strategy"</span><span class="token-punct">:</span> <span class="token-str">"cost-optimized"</span><span class="token-punct">,</span>
+    <span class="token-key">"max_cost"</span><span class="token-punct">:</span> <span class="token-num">0.05</span>
+  <span class="token-punct">}</span>
+<span class="token-punct">}</span></pre>
+              </div>
+            </div>
+          </article>
+
+          <!-- Pattern 2: Fallback chain -->
+          <article class="pattern-card" data-reveal data-reveal-delay="150">
+            <div class="pattern-header">
+              <h3 class="pattern-title">Cascading Fallback Chain</h3>
+              <span class="badge badge--purple">Reliability</span>
+            </div>
+            <div class="pattern-body">
+              <p class="pattern-desc">
+                Automatically cascade through providers on failure or rate-limit.
+                Each hop is logged to Supabase with error code and retry count.
+              </p>
+              <div class="code-block" role="region" aria-label="Fallback chain configuration code">
+                <pre><span class="token-comment">// Fallback priority chain</span>
+<span class="token-key">chain</span><span class="token-punct">:</span> <span class="token-punct">[</span>
+  <span class="token-punct">{</span> <span class="token-key">model</span><span class="token-punct">:</span> <span class="token-str">"claude-sonnet-4"</span> <span class="token-punct">},</span>
+  <span class="token-punct">{</span> <span class="token-key">model</span><span class="token-punct">:</span> <span class="token-str">"gpt-4o"</span><span class="token-punct">,</span>
+    <span class="token-key">on_error</span><span class="token-punct">:</span> <span class="token-str">"next"</span> <span class="token-punct">},</span>
+  <span class="token-punct">{</span> <span class="token-key">model</span><span class="token-punct">:</span> <span class="token-str">"gemini-2.5-pro"</span><span class="token-punct">,</span>
+    <span class="token-key">on_error</span><span class="token-punct">:</span> <span class="token-str">"next"</span> <span class="token-punct">},</span>
+  <span class="token-punct">{</span> <span class="token-key">model</span><span class="token-punct">:</span> <span class="token-str">"ollama/llama3"</span><span class="token-punct">,</span>
+    <span class="token-key">on_error</span><span class="token-punct">:</span> <span class="token-str">"fail"</span>  <span class="token-punct">}</span>
+<span class="token-punct">]</span></pre>
+              </div>
+            </div>
+          </article>
+
+          <!-- Pattern 3: Task classification -->
+          <article class="pattern-card" data-reveal data-reveal-delay="100">
+            <div class="pattern-header">
+              <h3 class="pattern-title">Task-Type Classification Router</h3>
+              <span class="badge badge--amber">Smart Routing</span>
+            </div>
+            <div class="pattern-body">
+              <p class="pattern-desc">
+                Classifies incoming prompts by task type and routes to the model
+                best suited for that category — code, reasoning, creative, or summarization.
+              </p>
+              <div class="code-block" role="region" aria-label="Task classification router configuration code">
+                <pre><span class="token-comment">// Task-type routing map</span>
+<span class="token-key">routes</span><span class="token-punct">:</span> <span class="token-punct">{</span>
+  <span class="token-key">code</span><span class="token-punct">:</span>       <span class="token-str">"deepseek-coder"</span><span class="token-punct">,</span>
+  <span class="token-key">reasoning</span><span class="token-punct">:</span>  <span class="token-str">"claude-opus-4"</span><span class="token-punct">,</span>
+  <span class="token-key">creative</span><span class="token-punct">:</span>   <span class="token-str">"claude-sonnet-4"</span><span class="token-punct">,</span>
+  <span class="token-key">summary</span><span class="token-punct">:</span>    <span class="token-str">"gpt-4o-mini"</span><span class="token-punct">,</span>
+  <span class="token-key">default</span><span class="token-punct">:</span>    <span class="token-str">"gpt-4o"</span>
+<span class="token-punct">}</span></pre>
+              </div>
+            </div>
+          </article>
+
+          <!-- Pattern 4: Budget guard -->
+          <article class="pattern-card" data-reveal data-reveal-delay="150">
+            <div class="pattern-header">
+              <h3 class="pattern-title">Daily Budget Guard</h3>
+              <span class="badge badge--amber">Cost Control</span>
+            </div>
+            <div class="pattern-body">
+              <p class="pattern-desc">
+                Supabase tracks cumulative spend per workspace. When the daily budget
+                is reached, requests automatically downgrade to local/free-tier models.
+              </p>
+              <div class="code-block" role="region" aria-label="Daily budget guard configuration code">
+                <pre><span class="token-comment">-- Supabase cost guard query</span>
+<span class="token-key">SELECT</span> sum(cost_usd)
+<span class="token-key">FROM</span>   llm_requests
+<span class="token-key">WHERE</span>  workspace_id <span class="token-punct">=</span> <span class="token-str">$1</span>
+  <span class="token-key">AND</span>  created_at <span class="token-punct">&gt;=</span>
+       date_trunc(<span class="token-str">'day'</span>, now());
+<span class="token-comment">-- &gt; if sum &gt; budget: fallback</span></pre>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RISK MATRIX ───────────────────────────────────── -->
+    <section class="risk-section" id="risk" aria-labelledby="risk-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">Risk Assessment</div>
+          <h2 class="section-title" id="risk-heading">Operational Risk Matrix</h2>
+          <p class="section-subtitle">
+            Known failure modes, their likelihood, impact, and mitigation strategies
+            built into the balancer's auto-healing logic.
+          </p>
+        </div>
+
+        <div class="risk-table-wrapper" data-reveal data-reveal-delay="100">
+          <div class="risk-matrix" role="table" aria-label="Operational risk matrix">
+
+            <!-- Header row -->
+            <div class="risk-cell risk-header" role="columnheader">Risk Factor</div>
+            <div class="risk-cell risk-header" role="columnheader">Likelihood</div>
+            <div class="risk-cell risk-header" role="columnheader">Impact</div>
+            <div class="risk-cell risk-header" role="columnheader">Mitigation</div>
+
+            <!-- Row 1: Provider outage -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Provider Outage</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Medium</div>
+              <div class="risk-desc">~2–4 incidents/year per provider</div>
+            </div>
+            <div class="risk-cell risk-high" role="cell">
+              <div class="risk-level">High</div>
+              <div class="risk-desc">All requests fail if single provider</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Mitigated</div>
+              <div class="risk-mitigation">Auto-failover to backup provider &lt;100ms</div>
+            </div>
+
+            <!-- Row 2: Rate limit -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Rate Limit Hit</div>
+            </div>
+            <div class="risk-cell risk-high" role="cell">
+              <div class="risk-level">High</div>
+              <div class="risk-desc">Common under burst traffic</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Medium</div>
+              <div class="risk-desc">Increased latency, partial failures</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Mitigated</div>
+              <div class="risk-mitigation">Round-robin + exponential backoff + queue</div>
+            </div>
+
+            <!-- Row 3: Cost overrun -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Cost Overrun</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Medium</div>
+              <div class="risk-desc">Misconfigured routing or prompt length</div>
+            </div>
+            <div class="risk-cell risk-high" role="cell">
+              <div class="risk-level">High</div>
+              <div class="risk-desc">Unexpected API bills</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Mitigated</div>
+              <div class="risk-mitigation">Daily budget guard + Supabase alerts</div>
+            </div>
+
+            <!-- Row 4: Data privacy -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Data Privacy</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Low</div>
+              <div class="risk-desc">Sensitive prompts sent to cloud</div>
+            </div>
+            <div class="risk-cell risk-high" role="cell">
+              <div class="risk-level">High</div>
+              <div class="risk-desc">Compliance violations, data leaks</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Mitigated</div>
+              <div class="risk-mitigation">PII detection → local model routing</div>
+            </div>
+
+            <!-- Row 5: Model degradation -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Model Degradation</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Low</div>
+              <div class="risk-desc">Provider silent quality regression</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Medium</div>
+              <div class="risk-desc">Output quality drops undetected</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Partial</div>
+              <div class="risk-mitigation">Output scoring + human-in-loop alerts</div>
+            </div>
+
+            <!-- Row 6: Local model cold start -->
+            <div class="risk-cell" role="rowheader">
+              <div class="risk-label">Local Model Cold Start</div>
+            </div>
+            <div class="risk-cell risk-medium" role="cell">
+              <div class="risk-level">Medium</div>
+              <div class="risk-desc">Ollama restart or Mac sleep</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Low</div>
+              <div class="risk-desc">Only affects local-first routing</div>
+            </div>
+            <div class="risk-cell risk-low" role="cell">
+              <div class="risk-level">Mitigated</div>
+              <div class="risk-mitigation">Health-check → instant cloud fallback</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TECH STACK ────────────────────────────────────── -->
+    <section class="stack-section" id="stack" aria-labelledby="stack-heading">
+      <div class="container">
+        <div class="section-header" data-reveal>
+          <div class="section-eyebrow">Technology Stack</div>
+          <h2 class="section-title" id="stack-heading">Built With</h2>
+          <p class="section-subtitle">
+            Every component is production-tested within the Wallestars ecosystem.
+          </p>
+        </div>
+
+        <div class="stack-grid" data-reveal data-reveal-delay="100">
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">n8n</div>
+            <div class="stack-name">n8n</div>
+            <div class="stack-role">Workflow Orchestration — 196+ automation workflows</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">SB</div>
+            <div class="stack-name">Supabase</div>
+            <div class="stack-role">PostgreSQL + pgvector + Storage — request logging &amp; cost tracking</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">Rd</div>
+            <div class="stack-name">Redis</div>
+            <div class="stack-role">Response caching + pub/sub for real-time health updates</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">OC</div>
+            <div class="stack-name">OpenClaw</div>
+            <div class="stack-role">Agent gateway on port 18789 — proxy &amp; fleet management</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">Ol</div>
+            <div class="stack-name">Ollama</div>
+            <div class="stack-role">Local LLM runtime — llama3, deepseek-coder, qwen2.5-coder</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">PM</div>
+            <div class="stack-name">PM2</div>
+            <div class="stack-role">Process management — auto-restart, clustering, logging</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">Nx</div>
+            <div class="stack-name">Nginx</div>
+            <div class="stack-role">Reverse proxy + SSL termination — Hostinger KVM2 VPS</div>
+          </div>
+
+          <div class="stack-item">
+            <div class="stack-icon" aria-hidden="true">iOS</div>
+            <div class="stack-name">iOS Shortcuts</div>
+            <div class="stack-role">Mobile automation trigger — webhook-based prompt entry</div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+
+        <!-- Brand column -->
+        <div class="footer-brand">
+          <a href="/" class="site-logo" aria-label="OpenBalancer home">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="32" height="32" rx="6" fill="var(--color-primary)"/>
+              <rect x="4" y="13.5" width="8" height="5" rx="2" fill="white" opacity="0.9"/>
+              <line x1="12" y1="16" x2="17" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="12" y1="16" x2="17" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="12" y1="16" x2="17" y2="22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              <rect x="17" y="7" width="10" height="5.5" rx="2" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+              <rect x="17" y="13.25" width="10" height="5.5" rx="2" fill="white" opacity="0.9"/>
+              <rect x="17" y="19.5" width="10" height="5.5" rx="2" fill="none" stroke="white" stroke-width="1.5" opacity="0.6"/>
+            </svg>
+            <span class="logo-text">Open<span>Balancer</span></span>
+          </a>
+          <p class="footer-tagline">
+            Multi-LLM orchestration for the Wallestars AI ecosystem.
+            Route smarter, spend less, never go down.
+          </p>
+          <div class="footer-stack-badges" style="margin-top:var(--space-2)">
+            <span class="footer-badge">n8n</span>
+            <span class="footer-badge">Supabase</span>
+            <span class="footer-badge">Redis</span>
+            <span class="footer-badge">Ollama</span>
+          </div>
+        </div>
+
+        <!-- Navigation -->
+        <div>
+          <p class="footer-col-title">Navigate</p>
+          <ul class="footer-links" role="list">
+            <li><a href="#hero">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#comparison">Model Comparison</a></li>
+            <li><a href="#strategies">Strategies</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div>
+          <p class="footer-col-title">Resources</p>
+          <ul class="footer-links" role="list">
+            <li><a href="#patterns">Integration Patterns</a></li>
+            <li><a href="#risk">Risk Matrix</a></li>
+            <li><a href="#stack">Tech Stack</a></li>
+            <li><a href="https://github.com/gabipetkova056-stack/openbalancer" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          </ul>
+        </div>
+
+        <!-- Ecosystem -->
+        <div>
+          <p class="footer-col-title">Wallestars Ecosystem</p>
+          <ul class="footer-links" role="list">
+            <li><a href="#" aria-label="Wallestars platform (external link)">Wallestars Platform</a></li>
+            <li><a href="#" aria-label="OpenClaw agent manager">OpenClaw</a></li>
+            <li><a href="#" aria-label="RhythmClaw AI DJ controller">RhythmClaw</a></li>
+            <li><a href="#" aria-label="Nano Banana brand identity packs">Nano Banana</a></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="footer-bottom">
+        <p class="footer-copy">
+          &copy; 2026 Wallestars Ecosystem. Built with n8n, Supabase, and Claude AI.
+        </p>
+        <div class="footer-stack-badges">
+          <span class="footer-badge">v2.0</span>
+          <span class="footer-badge">MIT License</span>
+          <span class="footer-badge">Node.js</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
