@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at       TIMESTAMPTZ DEFAULT NOW(),
   file_url         TEXT NOT NULL,
-  file_type        TEXT CHECK (file_type IN ('pdf', 'image')),
+  file_type        TEXT CHECK (file_type IN ('pdf', 'image', 'text', 'json', 'csv', 'unknown')),
   vendor           TEXT,
   invoice_number   TEXT,
   invoice_date     DATE,

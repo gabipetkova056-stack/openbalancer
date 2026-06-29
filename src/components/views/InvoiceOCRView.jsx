@@ -149,7 +149,7 @@ export default function InvoiceOCRView() {
         <div className="card" style={{ padding: 'var(--space-5)', display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
           <FileText size={20} style={{ color: 'var(--text-faint)' }} aria-hidden="true" />
           <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
-            Upload PDF-to-text exports, .txt, .json or .csv invoices to extract vendor, number, dates, ДДС and total.
+            Upload invoice text exports (.txt, .json, .csv) to extract vendor, number, dates, ДДС and total.
           </div>
         </div>
       ) : (

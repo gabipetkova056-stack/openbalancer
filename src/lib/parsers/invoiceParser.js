@@ -74,6 +74,15 @@ function normalizeDate(raw) {
   return null;
 }
 
+/** Map a file name to the actual input type that produced the record. */
+function detectFileType(fileName = '') {
+  if (/\.(png|jpe?g|webp|gif)$/i.test(fileName)) return 'image';
+  if (/\.txt$/i.test(fileName)) return 'text';
+  if (/\.json$/i.test(fileName)) return 'json';
+  if (/\.csv$/i.test(fileName)) return 'csv';
+  return 'unknown';
+}
+
 /**
  * Extract structured invoice fields from raw text.
  * @param {string} text
@@ -130,7 +139,7 @@ export function parseInvoiceText(text, fileName = '') {
   return {
     id: generateInvoiceId(),
     fileName,
-    fileType: /\.(png|jpe?g|webp|gif)$/i.test(fileName) ? 'image' : 'pdf',
+    fileType: detectFileType(fileName),
     vendor,
     invoiceNumber,
     invoiceDate,

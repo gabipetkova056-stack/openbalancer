@@ -43,3 +43,13 @@ test('non-invoice text is rejected', () => {
 test('invoice text is detected', () => {
   assert.equal(isInvoiceText('Invoice number 5 — total due 100 VAT'), true);
 });
+
+test('fileType reflects actual input, not pdf', () => {
+  const t = 'Invoice No: INV-1\nTotal: 100.00 VAT';
+  assert.equal(parseInvoiceText(t, 'a.txt').fileType, 'text');
+  assert.equal(parseInvoiceText(t, 'a.json').fileType, 'json');
+  assert.equal(parseInvoiceText(t, 'a.csv').fileType, 'csv');
+  assert.equal(parseInvoiceText(t, 'a.png').fileType, 'image');
+  assert.equal(parseInvoiceText(t, 'a.pdf').fileType, 'unknown');
+  assert.notEqual(parseInvoiceText(t, 'a.txt').fileType, 'pdf');
+});
