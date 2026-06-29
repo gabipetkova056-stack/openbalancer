@@ -12,12 +12,14 @@ import React, { useMemo, useRef, useState } from 'react';
 import { FileText, Upload, Download, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import useStore from '../../store/useStore.js';
 import { parseInvoiceText, isInvoiceText } from '../../lib/parsers/invoiceParser.js';
+import { toDeltaProCsv } from '../../lib/parsers/deltaProExport.js';
 
 const COMMANDS = [
   ['/upload_invoice', 'Качи фактура (PDF/снимка) за OCR обработка'],
   ['/ocr_status', 'Статус на последната OCR задача'],
   ['/invoices', 'Списък обработени фактури'],
   ['/export_csv', 'Експорт на фактури в CSV'],
+  ['/export_deltapro', 'Експорт за Microinvest Delta Pro'],
   ['/ocr_stats', 'Статистика: точност, обработени, грешки'],
 ];
 
@@ -81,6 +83,16 @@ export default function InvoiceOCRView() {
     URL.revokeObjectURL(url);
   }
 
+  function exportDeltaPro() {
+    const txt = toDeltaProCsv(invoices);
+    const url = URL.createObjectURL(new Blob([txt], { type: 'text/plain;charset=windows-1251' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoices-deltapro.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="view-content">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
@@ -97,6 +109,7 @@ export default function InvoiceOCRView() {
           {invoices.length > 0 && (
             <>
               <button className="btn btn-ghost btn-sm" onClick={exportCsv}><Download size={14} /> Export CSV</button>
+              <button className="btn btn-ghost btn-sm" onClick={exportDeltaPro}><Download size={14} /> Delta Pro</button>
               <button className="btn btn-ghost btn-sm" onClick={clearInvoices}><Trash2 size={14} /> Clear</button>
             </>
           )}

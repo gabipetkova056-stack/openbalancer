@@ -38,6 +38,19 @@ Open `/dashboard` → **Invoice Parser**. Upload text-readable invoices;
 fields are extracted client-side, validated (`subtotal + tax = total`),
 listed with a confidence score, and exportable to CSV. No data leaves the browser.
 
+### Microinvest Delta Pro export
+
+The **Delta Pro** button exports invoices for Microinvest Delta Pro's *Импорт на
+документи*. The file is **best-effort, reference** formatting — confirm the column
+order against your Delta Pro version's import template:
+
+- semicolon (`;`) field delimiter, one invoice per line, no header row
+- decimal comma for amounts (`1200,00`), `dd.MM.yyyy` dates
+- columns: `invoiceNumber; invoiceDate; vendor; eik; subtotal; tax; total; currency`
+- save as **Windows-1251** on disk if Cyrillic renders incorrectly (download is UTF-8)
+
+> Not validated against a live Delta Pro install; treat as a starting template.
+
 ## Copilot ACP
 
 `copilot-acp/hermes_copilot_acp.py` talks to a Copilot ACP server via the
